@@ -1,11 +1,14 @@
-// End-to-end smoke test: the real API and the real vision service (simulated mode) on spare ports.
-// Passes when every camera has a fresh reading in the API and the assistant quotes a crowd camera's
-// live count. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
+// End-to-end smoke test: the real API and the real vision service on spare ports, counting synthetic
+// test clips with the test-boxes detector (no footage or GPU needed). Passes when every camera has a
+// fresh reading in the API and the assistant quotes a crowd camera's live count. Needs
+// `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
 //
 //   node scripts/e2e-smoke.mjs
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pickPython } from "./run-vision.mjs";
@@ -52,8 +55,14 @@ async function until(check, timeoutMs, what) {
 
 const cameras = async () => (await (await fetch(`${API}/api/cameras`)).json()).data;
 
+const clips = mkdtempSync(path.join(tmpdir(), "campus-live-clips-"));
 const services = [];
 try {
+  execFileSync(python, ["tools/make_test_clips.py", "--out", clips, "--seconds", "10"], {
+    cwd: path.join(root, "services", "vision"),
+    stdio: "inherit",
+  });
+
   services.push(
     start("api", process.execPath, ["--import", "tsx", "src/index.ts"], "services/api", {
       PORT: "4100",
@@ -67,9 +76,9 @@ try {
     start("vision", python, ["-m", "vision"], "services/vision", {
       VISION_API_URL: API,
       VISION_INGEST_TOKEN: token,
-      VISION_DETECTOR: "simulated",
-      VISION_CAMERAS_FILE: "configs/cameras.example.yaml",
-      VISION_PUBLISH_INTERVAL_S: "1",
+      VISION_DETECTOR: "test-boxes",
+      VISION_CAMERAS_FILE: path.join(clips, "cameras.yaml"),
+      VISION_PUBLISH_INTERVAL_S: "0.5",
       VISION_PORT: "8101",
     }),
   );
@@ -102,4 +111,5 @@ try {
   process.exitCode = 1;
 } finally {
   services.forEach(stop);
+  rmSync(clips, { recursive: true, force: true });
 }

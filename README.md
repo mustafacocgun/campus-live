@@ -24,7 +24,7 @@ leave the vision service; the apps get numbers only. Design: [docs/architecture.
 
 - Node.js 22 and npm
 - Python 3.12 (vision service)
-- A GPU machine for real YOLO counting; everything else runs anywhere in simulated mode
+- A PC with an NVIDIA GPU for the vision service (YOLO); the API and the apps run anywhere
 
 ## Getting started
 
@@ -37,24 +37,25 @@ cp apps/web/.env.example apps/web/.env.local
 
 cd services/vision && python -m venv .venv
 .venv\Scripts\activate                         # Windows (macOS/Linux: source .venv/bin/activate)
-pip install -e ".[dev]" && cd ../..
+pip install -e ".[dev,yolo]" && cd ../..         # GPU: install the CUDA build of torch first
 
-npm run dev                                   # api :4000 + simulated vision + web :3000, all live
+npm run dev                                   # api :4000 + vision :8001 (YOLO) + web :3000
 ```
 
 `npm run dev` finds `services/vision/.venv` by itself (no need to activate it in that terminal). Open
 http://localhost:3000 for the live map. For the phone app, copy `apps/mobile/.env.example` to
-`apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). To count from
-real video with YOLO on a GPU, see [services/vision/README.md](services/vision/README.md). The assistant
-answers rule-based until `LLM_*` is set in `services/api/.env`.
+`apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). Vision counts only
+the cameras that have footage in `services/vision/configs/cameras.yaml`; the others stay grey on the map
+(set-up, WILDTRACK and test clips without a GPU: [services/vision/README.md](services/vision/README.md)).
+The assistant answers rule-based until `LLM_*` is set in `services/api/.env`.
 
 | Command                           | What it does                                                            |
 | --------------------------------- | ----------------------------------------------------------------------- |
-| `npm run dev`                     | API, simulated vision and web together                                  |
+| `npm run dev`                     | API, vision (live YOLO) and web together                                |
 | `npm run dev:mobile`              | The Expo app                                                            |
 | `npm run typecheck`               | Every TypeScript workspace                                              |
 | `npm test`                        | contracts, client and API tests (vision: `pytest` in `services/vision`) |
-| `npm run e2e`                     | Real API + simulated vision: fresh readings and a grounded answer       |
+| `npm run e2e`                     | Real API + vision on synthetic test clips: fresh readings and an answer |
 | `node scripts/assistant-eval.mjs` | 5 real Turkish questions next to the live data (run with the LLM key)   |
 
 Working rules for this repo (people and coding assistants alike): [CLAUDE.md](CLAUDE.md).

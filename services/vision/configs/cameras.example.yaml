@@ -3,36 +3,48 @@
 # until a hand count calibrates them (CLAUDE.md §3.6).
 #
 # To count from video: copy this file to cameras.yaml (git-ignored: sources can be private URLs), set
-# `source` to a video file or a webcam index for the cameras you have footage for, and run with
-# VISION_DETECTOR=yolo. Footage and its license: docs/data-sources.md.
+# `source` for the cameras you have footage for (a video file or a webcam index), and run with
+# VISION_CAMERAS_FILE=configs/cameras.yaml. A camera without a source does not run: grey on the map.
+# Footage and its license: docs/data-sources.md.
+#
+# The 7 plaza cameras are WILDTRACK's views C1..C7: their own calibration (datasets/wildtrack/) places
+# people on the map, at the plaza anchor below. The anchor is a placeholder: after the first run, move
+# it until the heat sits on the plaza (services/vision/README.md, WILDTRACK).
 cameras:
   - id: kutuphane-meydani-1
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 1, anchor: &plaza { lat: 40.741533, lng: 30.332652, rotation_deg: 90 } }
 
   - id: kutuphane-meydani-2
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 2, anchor: *plaza }
 
   - id: kutuphane-meydani-3
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 3, anchor: *plaza }
 
   - id: kutuphane-meydani-4
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 4, anchor: *plaza }
 
   - id: kutuphane-meydani-5
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 5, anchor: *plaza }
 
   - id: kutuphane-meydani-6
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 6, anchor: *plaza }
 
   - id: kutuphane-meydani-7
     kind: crowd
     thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 7, anchor: *plaza }
 
   - id: kutuphane-bati
     kind: crowd

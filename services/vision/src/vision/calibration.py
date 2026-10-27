@@ -13,11 +13,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from vision.projection import offset
+from vision.projection import feet_of, offset
 
 # WILDTRACK's cameras C1..C7, as its calibration files name them. The order comes from public code
 # that reads the dataset (MVDet), not from EPFL [WEAK]: check it against the files when downloading.
 WILDTRACK_CAMERAS = ("CVLab1", "CVLab2", "CVLab3", "CVLab4", "IDIAP1", "IDIAP2", "IDIAP3")
+# The resolution WILDTRACK's calibration belongs to [EVIDENCED, paper arXiv 1707.09299].
+WILDTRACK_FRAME = (1920, 1080)
 
 
 @dataclass(frozen=True)
@@ -40,12 +42,15 @@ class CalibratedProjection:
         world_unit_m: float,
         anchor: MapAnchor,
         max_range_m: float = 60.0,
+        frame_size: tuple[int, int] | None = None,
     ) -> None:
         self.K = np.asarray(K, dtype=np.float64).reshape(3, 3)
         self.dist = np.asarray(dist, dtype=np.float64).ravel()
         self.world_unit_m = world_unit_m
         self.anchor = anchor
         self.max_range_m = max_range_m
+        # The resolution K belongs to; a resized video would put people in the wrong place.
+        self.frame_size = frame_size
         self._rotation, _ = cv2.Rodrigues(np.asarray(rvec, dtype=np.float64).reshape(3, 1))
         # The camera's position in world units: C = -R^T t.
         self._centre = -self._rotation.T @ np.asarray(tvec, dtype=np.float64).reshape(3)
@@ -83,6 +88,13 @@ class CalibratedProjection:
         """(lat, lng) of each pixel's ground point. Pixels that miss the ground in range are dropped."""
         ground, hits = self._ground(points_px)
         return self._to_map(ground[hits])
+
+    def __call__(self, boxes_xyxy: np.ndarray, frame_size: tuple[int, int]) -> list[tuple[float, float]]:
+        """(lat, lng) of each box's feet, for frames at the calibrated size."""
+        if self.frame_size and tuple(frame_size) != tuple(self.frame_size):
+            expected, got = (f"{w}x{h}" for w, h in (self.frame_size, frame_size))
+            raise ValueError(f"the calibration is for {expected} frames, the video is {got}")
+        return self.project(feet_of(boxes_xyxy))
 
     def cone(self, frame_size: tuple[int, int]) -> list[tuple[float, float]]:
         """The ground in view, for the map: the image's bottom-left, bottom-right, top-right and

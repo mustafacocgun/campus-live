@@ -35,7 +35,7 @@ class CameraWorker(WorkerBase):
         self,
         camera: CameraConfig,
         detector_factory: Callable[[], Detector],
-        analyzer: Analyzer,
+        analyzer_factory: Callable[[], Analyzer],
         *,
         source_kind: ReadingSource = "demo-footage",
         loop: bool = True,
@@ -44,7 +44,7 @@ class CameraWorker(WorkerBase):
         super().__init__(camera)
         self.source = parse_source(camera.source) if camera.source else None
         self.detector_factory = detector_factory
-        self.analyzer = analyzer
+        self.analyzer_factory = analyzer_factory
         # A webcam on teammates is demo footage too; "camera" is reserved for a permitted real camera.
         self.source_kind = source_kind
         self.loop = loop
@@ -52,15 +52,17 @@ class CameraWorker(WorkerBase):
         self.frames_read = 0
 
     def run(self) -> None:
-        import cv2  # Only video workers need OpenCV; simulated mode never loads it.
+        import cv2
 
         capture = None
         self._mark_started()
         try:
             if self.source is None:
                 raise RuntimeError("the camera has no source")
-            # Loaded here, not at startup, so a slow or failing model load never blocks the service.
+            # Loaded here, not at startup, so a slow or failing load (model weights, a dataset's
+            # calibration files) turns this camera grey and never blocks the service.
             detect = self.detector_factory()
+            analyzer = self.analyzer_factory()
             capture = cv2.VideoCapture(self.source)
             if not capture.isOpened():
                 raise RuntimeError("could not open the video source")
@@ -84,7 +86,7 @@ class CameraWorker(WorkerBase):
                         raise RuntimeError("could not decode a frame")
                     height, width = frame.shape[:2]
                     self._record(
-                        self.analyzer.update(detect(frame), (width, height), self._now(), self.source_kind)
+                        analyzer.update(detect(frame), (width, height), self._now(), self.source_kind)
                     )
                     # The frame goes out of scope here: frames are never stored (CLAUDE.md §0.2).
                 if self.realtime and is_file:

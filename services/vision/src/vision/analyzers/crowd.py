@@ -1,6 +1,7 @@
-"""Crowd level: how many people are in a camera's area right now."""
+"""Crowd: how many people a camera sees right now, and where they stand on the map."""
 
 from collections import deque
+from collections.abc import Callable
 from datetime import datetime
 from statistics import median_high
 
@@ -10,11 +11,23 @@ import supervision as sv
 from vision.analyzers.levels import level_for_count
 from vision.cameras import CameraConfig
 from vision.contracts import CameraReading, ReadingSource
+from vision.density import DensityGrid
+
+# Boxes (x1, y1, x2, y2) and the frame's (width, height) -> where each person's feet are, as (lat, lng).
+FeetProjector = Callable[[np.ndarray, tuple[int, int]], list[tuple[float, float]]]
 
 
 class CrowdAnalyzer:
-    def __init__(self, camera: CameraConfig, window: int = 5) -> None:
+    def __init__(
+        self,
+        camera: CameraConfig,
+        project: FeetProjector,
+        grid: DensityGrid | None = None,
+        window: int = 5,
+    ) -> None:
         self.camera = camera
+        self._project = project
+        self._grid = grid or DensityGrid()
         self._counts: deque[int] = deque(maxlen=window)
         self._zone: sv.PolygonZone | None = None
         self._zone_frame: tuple[int, int] | None = None
@@ -22,8 +35,9 @@ class CrowdAnalyzer:
     def update(
         self, detections: sv.Detections, frame_size: tuple[int, int], now: datetime, source: ReadingSource
     ) -> CameraReading:
-        """Count the people in one frame. `frame_size` is (width, height); detections are people only."""
-        self._counts.append(self._count(detections, frame_size))
+        """One sampled frame. `frame_size` is (width, height); detections are people only."""
+        people = self._in_zone(detections, frame_size)
+        self._counts.append(len(people))
         # The median of the last few samples: one frame with missed people doesn't flicker the map.
         shown = int(median_high(self._counts))
         return CameraReading(
@@ -31,13 +45,15 @@ class CrowdAnalyzer:
             kind="crowd",
             count=shown,
             level=level_for_count(shown, self.camera.thresholds),
+            # Per-cell weights only: the people's positions are binned here and go no further.
+            cells=self._grid.update(self._project(people.xyxy, frame_size)),
             source=source,
             measured_at=now,
         )
 
-    def _count(self, detections: sv.Detections, frame_size: tuple[int, int]) -> int:
+    def _in_zone(self, detections: sv.Detections, frame_size: tuple[int, int]) -> sv.Detections:
         if self.camera.zone is None or len(detections) == 0:
-            return len(detections)
+            return detections
         if self._zone_frame != frame_size:
             width, height = frame_size
             polygon = np.array(
@@ -46,4 +62,4 @@ class CrowdAnalyzer:
             # People count where their feet are, so someone standing in front of the zone doesn't.
             self._zone = sv.PolygonZone(polygon=polygon, triggering_anchors=(sv.Position.BOTTOM_CENTER,))
             self._zone_frame = frame_size
-        return int(self._zone.trigger(detections).sum())
+        return detections[self._zone.trigger(detections)]

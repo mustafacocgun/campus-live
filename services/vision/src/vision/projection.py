@@ -58,13 +58,31 @@ def ground_homography(pose: CameraPose, frame_size: tuple[int, int]) -> np.ndarr
     return cv2.getPerspectiveTransform(image, ground)
 
 
+def feet_of(boxes_xyxy: np.ndarray) -> np.ndarray:
+    """Each box's bottom centre (x, y): where that person's feet touch the ground."""
+    boxes = np.asarray(boxes_xyxy, dtype=np.float64).reshape(-1, 4)
+    return np.stack([(boxes[:, 0] + boxes[:, 2]) / 2, boxes[:, 3]], axis=1)
+
+
 def project_feet(
     boxes_xyxy: np.ndarray, homography: np.ndarray, pose: CameraPose
 ) -> list[tuple[float, float]]:
-    """(lat, lng) of each box's bottom centre: where that person's feet touch the ground."""
-    boxes = np.asarray(boxes_xyxy, dtype=np.float64).reshape(-1, 4)
-    if not len(boxes):
+    """(lat, lng) of each box's feet."""
+    feet = feet_of(boxes_xyxy)
+    if not len(feet):
         return []
-    feet = np.stack([(boxes[:, 0] + boxes[:, 2]) / 2, boxes[:, 3]], axis=1)
     ground = cv2.perspectiveTransform(feet.reshape(-1, 1, 2), homography).reshape(-1, 2)
     return [offset(pose.lat, pose.lng, east, north) for east, north in ground]
+
+
+class PoseProjector:
+    """Feet -> map through a camera's pose, with one homography per frame size."""
+
+    def __init__(self, pose: CameraPose) -> None:
+        self.pose = pose
+        self._homographies: dict[tuple[int, int], np.ndarray] = {}
+
+    def __call__(self, boxes_xyxy: np.ndarray, frame_size: tuple[int, int]) -> list[tuple[float, float]]:
+        if frame_size not in self._homographies:
+            self._homographies[frame_size] = ground_homography(self.pose, frame_size)
+        return project_feet(boxes_xyxy, self._homographies[frame_size], self.pose)
