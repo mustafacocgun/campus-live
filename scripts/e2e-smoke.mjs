@@ -1,6 +1,6 @@
 // End-to-end smoke test: the real API and the real vision service (simulated mode) on spare ports.
-// Passes when every camera has a fresh reading in the API and the assistant quotes the live parking
-// numbers. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
+// Passes when every camera has a fresh reading in the API and the assistant quotes a crowd camera's
+// live count. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
 //
 //   node scripts/e2e-smoke.mjs
 
@@ -80,21 +80,21 @@ try {
   );
   console.log(`ok: ${(await cameras()).length} cameras have fresh readings in the API`);
 
-  const before = (await cameras()).find((camera) => camera.kind === "parking");
+  const tasKafe = async () => (await cameras()).find((camera) => camera.id === "tas-kafe");
+  const before = await tasKafe();
   const response = await fetch(`${API}/api/assistant/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message: "Otoparkta boş yer var mı?" }),
+    body: JSON.stringify({ message: "Taş Kafe kalabalık mı?" }),
   });
   const { answer, via } = (await response.json()).data;
-  const after = (await cameras()).find((camera) => camera.kind === "parking");
-  const phrase = (camera) =>
-    camera.reading.parking.free === 0 ? "boş yer yok" : `${camera.reading.parking.free} boş yer var`;
+  const after = await tasKafe();
+  const phrase = (camera) => `Taş Kafe: ${camera.reading.count} kişi`;
   // Readings change every second, so the answer may match the state just before or just after it.
   if (via !== "fallback" || ![before, after].some((camera) => answer.includes(phrase(camera)))) {
-    throw new Error(`the assistant did not quote the live parking numbers:\n${answer}`);
+    throw new Error(`the assistant did not quote Taş Kafe's live count:\n${answer}`);
   }
-  console.log(`ok: the assistant quoted the live parking numbers (${phrase(before)})`);
+  console.log(`ok: the assistant quoted Taş Kafe's live count (${phrase(before)})`);
   console.log("E2E SMOKE PASSED");
 } catch (error) {
   console.error(`E2E SMOKE FAILED: ${error.message}`);

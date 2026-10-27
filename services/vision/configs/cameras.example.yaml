@@ -1,24 +1,83 @@
-# Demo cameras for Campus Live. Every id must exist in services/api/config/cameras.json with the same
-# kind (a test checks this). Thresholds and slot totals are placeholders until a hand count
-# calibrates them (CLAUDE.md §3.6).
+# Processing config for every camera in config/cameras.json (the shared registry: names and poses).
+# Every id must exist there with the same kind (a test checks this). Thresholds are placeholders
+# until a hand count calibrates them (CLAUDE.md §3.6).
 #
-# To count from video: copy this file to cameras.yaml (git-ignored: sources can be private URLs),
-# set `source` to a video file or a webcam index, and run with VISION_DETECTOR=yolo.
+# To count from video: copy this file to cameras.yaml (git-ignored: sources can be private URLs), set
+# `source` to a video file or a webcam index for the cameras you have footage for, and run with
+# VISION_DETECTOR=yolo. Footage and its license: docs/data-sources.md.
 cameras:
-  - id: kutuphane-giris
+  - id: kutuphane-meydani-1
     kind: crowd
-    thresholds: { medium: 15, high: 40 }
-
-  - id: kafe-merkez
-    kind: crowd
-    # Only people whose feet are inside this area count: x, y as fractions of the frame.
-    zone: [[0.1, 0.3], [0.9, 0.3], [0.9, 1.0], [0.1, 1.0]]
     thresholds: { medium: 10, high: 25 }
 
-  - id: otopark-a
-    kind: parking
-    simulated_total: 40
+  - id: kutuphane-meydani-2
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
 
-  - id: ana-yol
-    kind: traffic
+  - id: kutuphane-meydani-3
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+
+  - id: kutuphane-meydani-4
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+
+  - id: kutuphane-meydani-5
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+
+  - id: kutuphane-meydani-6
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+
+  - id: kutuphane-meydani-7
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+
+  - id: kutuphane-bati
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: kutuphane-yolu
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: merkez-kantin
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: tas-kafe
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: kantin
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: yemekhane
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: yemekhane-yolu
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: muhendislik
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: bilisim
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: fen-edebiyat
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: rektorluk
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: kongre-merkezi
+    kind: crowd
     thresholds: { medium: 8, high: 20 }

@@ -100,8 +100,8 @@ decisions that are the team's · never claim an improvement you did not measure.
    dataset calibration) → analyzer (crowd | parking | traffic) → `CameraReading` (count + 3 m density
    cells) → `POST /internal/readings`. Nothing else leaves the vision service: cells are aggregates,
    never identities, tracks or per-person positions.
-2. **Cameras are keyed by id.** Every camera in `services/vision/configs/` exists in
-   `services/api/config/cameras.json` with the same kind; a test checks this.
+2. **Cameras are keyed by id.** Every camera in `services/vision/configs/` exists in the shared
+   registry `config/cameras.json` with the same kind and a pose; a test checks this.
 3. **Counts are estimates.** They are smoothed (median of the last 5 samples), labelled demo, and
    marked stale after 15 s without a reading (grey on the map).
 4. **Live YOLO is the only data source in the app** (each teammate runs vision on a GPU PC with the

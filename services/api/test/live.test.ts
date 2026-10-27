@@ -2,7 +2,7 @@ import type { ApiResponse, CameraReading, LiveCamera } from "@campus-live/contra
 import { SOCKET_EVENTS } from "@campus-live/contracts";
 import { io as connect } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadRegistry } from "../src/modules/cameras/camera-registry.js";
+import { loadRegistry, SHARED_CAMERAS_FILE } from "../src/modules/cameras/camera-registry.js";
 import { LiveStore } from "../src/modules/live/live-store.js";
 import { env, ingest, reading, startServer } from "./helpers.js";
 
@@ -122,5 +122,17 @@ describe("Socket.IO", () => {
     await ingest(server.url, { readings: [sent] });
     expect(await received).toEqual(sent);
     client.close();
+  });
+});
+
+describe("shared camera registry", () => {
+  it("loads the shared registry with poses", () => {
+    const registry = loadRegistry(SHARED_CAMERAS_FILE);
+    expect(registry.list().length).toBeGreaterThanOrEqual(10);
+    for (const camera of registry.list()) {
+      expect(camera.heading).toBeGreaterThanOrEqual(0);
+      expect(camera.fovDeg).toBeGreaterThanOrEqual(10);
+      expect(camera.rangeM).toBeGreaterThanOrEqual(5);
+    }
   });
 });

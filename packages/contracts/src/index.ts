@@ -15,7 +15,7 @@ export type Level = z.infer<typeof Level>;
 export const ReadingSource = z.enum(["simulated", "demo-footage", "camera"]);
 export type ReadingSource = z.infer<typeof ReadingSource>;
 
-/** A camera as the map shows it. The API owns this registry. */
+/** A camera as the map shows it: where it stands and where it looks. The registry is config/cameras.json. */
 export const Camera = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
@@ -23,8 +23,22 @@ export const Camera = z.object({
   kind: CameraKind,
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
+  /** Where the camera looks, in degrees clockwise from north. */
+  heading: z.number().min(0).lt(360),
+  /** Horizontal view angle in degrees. */
+  fovDeg: z.number().min(10).max(170),
+  /** Distance from the camera to the far edge of its view, in metres. */
+  rangeM: z.number().min(5).max(150),
 });
 export type Camera = z.infer<typeof Camera>;
+
+/** People in one 3 m cell of the campus grid, smoothed, at the cell's centre. An aggregate, never a person. */
+export const DensityCell = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  weight: z.number().nonnegative(),
+});
+export type DensityCell = z.infer<typeof DensityCell>;
 
 export const ParkingState = z.object({
   total: z.number().int().nonnegative(),
@@ -40,6 +54,8 @@ export const CameraReading = z
     /** People (crowd) or vehicles (parking, traffic) in view. */
     count: z.number().int().nonnegative(),
     level: Level,
+    /** Crowd cameras only: where the people are, per 3 m cell (CLAUDE.md §3.1). */
+    cells: z.array(DensityCell).max(2000).optional(),
     /** Parking cameras only. */
     parking: ParkingState.optional(),
     source: ReadingSource,
@@ -53,6 +69,9 @@ export const CameraReading = z
         path: ["parking"],
         message: "parking is required for, and only for, parking cameras",
       });
+    }
+    if (reading.cells !== undefined && reading.kind !== "crowd") {
+      ctx.addIssue({ code: "custom", path: ["cells"], message: "cells are for crowd cameras only" });
     }
     if (reading.parking && reading.parking.free > reading.parking.total) {
       ctx.addIssue({ code: "custom", path: ["parking", "free"], message: "free cannot exceed total" });

@@ -3,16 +3,13 @@ from pydantic import ValidationError
 
 from conftest import EXAMPLE_CAMERAS
 from vision.cameras import load_cameras
+from vision.registry import load_registry
 
 
-def test_example_config_loads() -> None:
+def test_example_config_covers_every_registered_camera() -> None:
+    # The template teammates copy: one entry per camera on the map, in the registry's order.
     cameras = load_cameras(EXAMPLE_CAMERAS)
-    assert [(c.id, c.kind) for c in cameras] == [
-        ("kutuphane-giris", "crowd"),
-        ("kafe-merkez", "crowd"),
-        ("otopark-a", "parking"),
-        ("ana-yol", "traffic"),
-    ]
+    assert [c.id for c in cameras] == list(load_registry())
 
 
 def test_rejects_zone_outside_the_frame(tmp_path) -> None:

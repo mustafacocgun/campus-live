@@ -4,7 +4,8 @@ import sys
 
 from fastapi.testclient import TestClient
 
-from conftest import VISION_DIR
+from conftest import EXAMPLE_CAMERAS, VISION_DIR
+from vision.cameras import load_cameras
 
 
 def test_status_lists_cameras_without_frames(monkeypatch) -> None:
@@ -15,12 +16,7 @@ def test_status_lists_cameras_without_frames(monkeypatch) -> None:
     with TestClient(app) as client:
         status = client.get("/status").json()
     assert status["detector"] == "simulated"
-    assert [c["cameraId"] for c in status["cameras"]] == [
-        "kutuphane-giris",
-        "kafe-merkez",
-        "otopark-a",
-        "ana-yol",
-    ]
+    assert [c["cameraId"] for c in status["cameras"]] == [c.id for c in load_cameras(EXAMPLE_CAMERAS)]
     # Numbers and short strings only: no image data ever leaves the service (CLAUDE.md §0.2).
     for camera in status["cameras"]:
         assert all(
