@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { CameraReading } from "@campus-live/contracts";
 import { createApp } from "../src/app.js";
+import type { LlmClient } from "../src/modules/assistant/llm-client.js";
 import { EnvSchema } from "../src/config/env.js";
 import { loadRegistry } from "../src/modules/cameras/camera-registry.js";
 import { attachLiveSocket } from "../src/modules/live/live-socket.js";
@@ -25,10 +26,10 @@ export function reading(overrides: Partial<CameraReading> = {}): CameraReading {
 }
 
 /** The real app and Socket.IO on a random port, with the real camera registry. */
-export async function startServer() {
+export async function startServer(llm: LlmClient | null = null) {
   const registry = loadRegistry(env.CAMERAS_FILE);
   const store = new LiveStore(registry, env.STALE_AFTER_MS);
-  const server = createServer(createApp({ registry, store, env }));
+  const server = createServer(createApp({ registry, store, env, llm }));
   const io = attachLiveSocket(server, store, ["http://localhost:3000"]);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

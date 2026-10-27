@@ -3,6 +3,8 @@ import express from "express";
 import helmet from "helmet";
 import { corsOrigins, type Env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error-handler.js";
+import { assistantRouter } from "./modules/assistant/assistant.routes.js";
+import type { LlmClient } from "./modules/assistant/llm-client.js";
 import type { CameraRegistry } from "./modules/cameras/camera-registry.js";
 import { camerasRouter } from "./modules/cameras/cameras.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
@@ -13,9 +15,10 @@ export interface AppDeps {
   registry: CameraRegistry;
   store: LiveStore;
   env: Env;
+  llm: LlmClient | null;
 }
 
-export function createApp({ registry, store, env }: AppDeps) {
+export function createApp({ registry, store, env, llm }: AppDeps) {
   const app = express();
   app.disable("x-powered-by");
   app.use(helmet());
@@ -24,6 +27,7 @@ export function createApp({ registry, store, env }: AppDeps) {
 
   app.use("/api/health", healthRouter);
   app.use("/api/cameras", camerasRouter(store));
+  app.use("/api/assistant", assistantRouter({ store, llm }));
   app.use("/internal/readings", ingestRouter({ registry, store, token: env.VISION_INGEST_TOKEN }));
 
   app.use(notFound);
