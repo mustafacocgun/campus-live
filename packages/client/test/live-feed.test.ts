@@ -113,14 +113,32 @@ it("judges staleness by when readings arrive, not by the reading's own clock", a
   expect(states.at(-1)!.cameras[0].stale).toBe(false);
 }, 15_000);
 
-it("cameras without readings have no cells and are stale", async () => {
+it("a camera that falls silent leaves the heat at the next tick", async () => {
   const port = await freePort();
-  await startApi(port);
+  const cells = [{ lat: 40.7428, lng: 30.3332, weight: 2.5 }];
+  // Its last reading reached the API 14.9 s ago: fresh at load, stale a moment later.
+  const fading: LiveCamera = {
+    ...CAMERA,
+    id: "tas-kafe",
+    kind: "crowd",
+    stale: false,
+    ageMs: 14_900,
+    reading: {
+      cameraId: "tas-kafe",
+      kind: "crowd",
+      count: 3,
+      level: "low",
+      cells,
+      source: "demo-footage",
+      measuredAt: new Date().toISOString(),
+    },
+  };
+  await startApi(port, [fading]);
   const states: LiveState[] = [];
-  cleanup.push(startLiveFeed(`http://127.0.0.1:${port}`, (state) => states.push(state)));
-  const loaded = await waitFor(states, (state) => state.cameras.length === 1, 5_000);
-  expect(loaded.cells).toEqual([]);
-  expect(loaded.cameras[0].stale).toBe(true);
+  cleanup.push(startLiveFeed(`http://127.0.0.1:${port}`, (state) => states.push(state), 50));
+  await waitFor(states, (state) => state.cells.length === 1, 5_000);
+  const silent = await waitFor(states, (state) => state.cameras[0]?.stale === true, 5_000);
+  expect(silent.cells).toEqual([]);
 });
 
 it("live readings bring their cells to the campus heat", async () => {

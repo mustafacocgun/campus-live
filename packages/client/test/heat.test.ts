@@ -97,6 +97,12 @@ describe("lerpCells", () => {
     expect(halfway).toContainEqual(cell(40.7425, 1));
   });
 
+  it("drops cells that have faded to nothing visible", () => {
+    // Glides restart with every reading, often before they end: faded cells must not pile up.
+    expect(lerpCells([cell(40.7421, 1)], [], 0.995)).toEqual([]);
+    expect(lerpCells([cell(40.7421, 0.009)], [cell(40.7421, 0.009)], 0.5)).toEqual([]);
+  });
+
   it("fades vanishing cells out and drops them at the end", () => {
     expect(lerpCells([cell(40.7421, 2)], [], 0.5)).toEqual([cell(40.7421, 1)]);
     expect(lerpCells([cell(40.7421, 2)], [], 1)).toEqual([]);

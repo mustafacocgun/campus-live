@@ -185,9 +185,13 @@ export function cameraCone(camera: Camera, steps = 12): [number, number][] {
   return [origin, ...arc, origin];
 }
 
+// Below this weight a cell draws nothing. Glides restart with every reading, often before they end,
+// so faded cells are dropped here rather than only at the end of a glide.
+const INVISIBLE_WEIGHT = 0.01;
+
 /**
  * The heat `t` of the way (0 to 1) from one update to the next, so the cloud glides instead of
- * jumping: cells that appear fade in from 0, cells that vanish fade out and are dropped at the end.
+ * jumping: cells that appear fade in from 0, cells that vanish fade out and are dropped.
  */
 export function lerpCells(from: DensityCell[], to: DensityCell[], t: number): DensityCell[] {
   const pairs = new Map<string, { cell: DensityCell; from: number; to: number }>();
@@ -199,7 +203,7 @@ export function lerpCells(from: DensityCell[], to: DensityCell[], t: number): De
   const cells: DensityCell[] = [];
   for (const { cell, from: a, to: b } of pairs.values()) {
     const weight = a + (b - a) * t;
-    if (weight > 0) cells.push({ lat: cell.lat, lng: cell.lng, weight });
+    if (weight >= INVISIBLE_WEIGHT) cells.push({ lat: cell.lat, lng: cell.lng, weight });
   }
   return cells;
 }
