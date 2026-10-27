@@ -1,8 +1,8 @@
-import type { CameraKind } from "@campus-live/contracts";
+import type { Camera, CameraKind } from "@campus-live/contracts";
 
 /**
  * Hand-drawn 24×24 stroke icons. The path data is exported on its own because the map draws its
- * markers as HTML strings (Leaflet divIcon), not React elements.
+ * pins as HTML strings (Leaflet divIcon), not React elements.
  */
 export const KIND_ICON_PATH: Record<CameraKind, string> = {
   crowd:
@@ -11,6 +11,16 @@ export const KIND_ICON_PATH: Record<CameraKind, string> = {
   traffic:
     "M5.5 17H3v-5l2-5h14l2 5v5h-2.5M9.5 17h5M3 12h18M9.5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0M18.5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0",
 };
+
+// The registry has no icon field: the sections we know get their own icon, any other its kind's.
+const SECTION_ICON_PATH: Record<string, string> = {
+  Kütüphane: "M3 5.5c2.5-1 5.5-1 9 1v13c-3.5-2-6.5-2-9-1zM21 5.5c-2.5-1-5.5-1-9 1v13c3.5-2 6.5-2 9-1z",
+  Kafeler: "M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2M12 3.5v2",
+};
+
+export function iconPathFor(camera: Pick<Camera, "kind" | "section">): string {
+  return SECTION_ICON_PATH[camera.section] ?? KIND_ICON_PATH[camera.kind];
+}
 
 export const KIND_LABEL_TR: Record<CameraKind, string> = {
   crowd: "Kalabalık",
@@ -26,12 +36,26 @@ const STROKE = {
   strokeLinejoin: "round",
 } as const;
 
-export function KindIcon({ kind, className = "h-5 w-5" }: { kind: CameraKind; className?: string }) {
+function StrokeIcon({ d, className }: { d: string; className: string }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={className} {...STROKE}>
-      <path d={KIND_ICON_PATH[kind]} />
+      <path d={d} />
     </svg>
   );
+}
+
+export function KindIcon({ kind, className = "h-5 w-5" }: { kind: CameraKind; className?: string }) {
+  return <StrokeIcon d={KIND_ICON_PATH[kind]} className={className} />;
+}
+
+export function CameraIcon({
+  camera,
+  className = "h-5 w-5",
+}: {
+  camera: Pick<Camera, "kind" | "section">;
+  className?: string;
+}) {
+  return <StrokeIcon d={iconPathFor(camera)} className={className} />;
 }
 
 /** A map pin with a live dot: the Campus Live mark. */
@@ -54,9 +78,18 @@ export function SparkleIcon({ className = "h-5 w-5" }: { className?: string }) {
 }
 
 export function SendIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className={className} {...STROKE}>
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  );
+  return <StrokeIcon d="M5 12h14M13 6l6 6-6 6" className={className} />;
+}
+
+export function ChevronIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M9 6l6 6-6 6" className={className} />;
+}
+
+export function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M6 6l12 12M18 6L6 18" className={className} />;
+}
+
+/** All cameras: a 2×2 grid. */
+export function GridIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" className={className} />;
 }
