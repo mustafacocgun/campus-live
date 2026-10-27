@@ -24,6 +24,7 @@ __pycache__/
 
 # Vision data: videos and model weights are never committed (CLAUDE.md §0.3)
 services/vision/videos/
+services/vision/configs/cameras.yaml
 services/vision/models/*
 !services/vision/models/.gitkeep
 *.pt
