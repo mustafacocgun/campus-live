@@ -45,6 +45,27 @@ jobs:
       - run: ruff check . && ruff format --check .
       - run: pytest
 
+  yolo-smoke:
+    name: Real YOLO on a photo (CPU)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/vision
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/vision/pyproject.toml
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1
+      # CPU torch: the runner has no GPU, and the CUDA wheels are gigabytes. pip keeps it for the extra.
+      - run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev,yolo]"
+      - run: pytest tests/test_yolo_smoke.py -v
+        env:
+          VISION_REQUIRE_YOLO: "1"
+
   e2e:
     name: End-to-end smoke test
     needs: [node, vision]

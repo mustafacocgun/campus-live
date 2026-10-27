@@ -1,11 +1,14 @@
-// End-to-end smoke test: the real API and the real vision service (simulated mode) on spare ports.
-// Passes when every camera has a fresh reading in the API and the assistant quotes the live parking
-// numbers. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
+// End-to-end smoke test: the real API and the real vision service on spare ports, counting synthetic
+// test clips with the test-boxes detector (no footage or GPU needed). Passes when every camera has a
+// fresh reading with density cells inside its own view cone, and the assistant quotes a crowd camera's
+// live count. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
 //
 //   node scripts/e2e-smoke.mjs
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pickPython } from "./run-vision.mjs";
@@ -52,8 +55,32 @@ async function until(check, timeoutMs, what) {
 
 const cameras = async () => (await (await fetch(`${API}/api/cameras`)).json()).data;
 
+// Half the diagonal of a 3 m cell: a cell's centre may sit this far from the feet binned into it.
+const CELL_SLACK_M = 2.2;
+
+/** Why a cell cannot come from this camera's view, or null when it can. */
+function outsideCone(camera, cell) {
+  const north = (cell.lat - camera.latitude) * 111_320;
+  const east = (cell.lng - camera.longitude) * 111_320 * Math.cos((camera.latitude * Math.PI) / 180);
+  const distance = Math.hypot(east, north);
+  const bearing = (Math.atan2(east, north) * 180) / Math.PI;
+  const off = Math.abs(((bearing - camera.heading + 540) % 360) - 180);
+  const slack = (Math.atan2(CELL_SLACK_M, Math.max(distance, 1)) * 180) / Math.PI;
+  if (distance > camera.rangeM + CELL_SLACK_M)
+    return `${distance.toFixed(1)} m away, range ${camera.rangeM} m`;
+  if (off > camera.fovDeg / 2 + slack)
+    return `${off.toFixed(0)}° off its heading, view ±${camera.fovDeg / 2}°`;
+  return null;
+}
+
+const clips = mkdtempSync(path.join(tmpdir(), "campus-live-clips-"));
 const services = [];
 try {
+  execFileSync(python, ["tools/make_test_clips.py", "--out", clips, "--seconds", "10"], {
+    cwd: path.join(root, "services", "vision"),
+    stdio: "inherit",
+  });
+
   services.push(
     start("api", process.execPath, ["--import", "tsx", "src/index.ts"], "services/api", {
       PORT: "4100",
@@ -67,34 +94,47 @@ try {
     start("vision", python, ["-m", "vision"], "services/vision", {
       VISION_API_URL: API,
       VISION_INGEST_TOKEN: token,
-      VISION_DETECTOR: "simulated",
-      VISION_CAMERAS_FILE: "configs/cameras.example.yaml",
-      VISION_PUBLISH_INTERVAL_S: "1",
+      VISION_DETECTOR: "test-boxes",
+      VISION_CAMERAS_FILE: path.join(clips, "cameras.yaml"),
+      VISION_PUBLISH_INTERVAL_S: "0.5",
       VISION_PORT: "8101",
     }),
   );
   await until(
-    async () => (await cameras()).every((camera) => !camera.stale),
+    async () => (await cameras()).every((camera) => !camera.stale && camera.reading.cells?.length),
     30_000,
-    "fresh readings for every camera",
+    "fresh readings with density cells for every camera",
   );
-  console.log(`ok: ${(await cameras()).length} cameras have fresh readings in the API`);
+  const live = await cameras();
+  console.log(`ok: ${live.length} cameras have fresh readings with density cells in the API`);
+  // The heat must land where each camera looks: the service's pose wiring and map offsets are checked
+  // here. The projection's own geometry is not (the test clips are drawn through it, so a wrong
+  // homography cancels out): test_projection.py pins that with hand-derived values.
+  const strays = live.flatMap((camera) =>
+    camera.reading.cells
+      .map((cell) => outsideCone(camera, cell))
+      .filter(Boolean)
+      .map((why) => `${camera.id}: a cell ${why}`),
+  );
+  if (strays.length) throw new Error(`cells outside their camera's cone:\n${strays.slice(0, 10).join("\n")}`);
+  const total = live.reduce((sum, camera) => sum + camera.reading.cells.length, 0);
+  console.log(`ok: all ${total} cells lie inside their camera's view cone`);
 
-  const before = (await cameras()).find((camera) => camera.kind === "parking");
+  const tasKafe = async () => (await cameras()).find((camera) => camera.id === "tas-kafe");
+  const before = await tasKafe();
   const response = await fetch(`${API}/api/assistant/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message: "Otoparkta boş yer var mı?" }),
+    body: JSON.stringify({ message: "Taş Kafe kalabalık mı?" }),
   });
   const { answer, via } = (await response.json()).data;
-  const after = (await cameras()).find((camera) => camera.kind === "parking");
-  const phrase = (camera) =>
-    camera.reading.parking.free === 0 ? "boş yer yok" : `${camera.reading.parking.free} boş yer var`;
+  const after = await tasKafe();
+  const phrase = (camera) => `Taş Kafe: ${camera.reading.count} kişi`;
   // Readings change every second, so the answer may match the state just before or just after it.
   if (via !== "fallback" || ![before, after].some((camera) => answer.includes(phrase(camera)))) {
-    throw new Error(`the assistant did not quote the live parking numbers:\n${answer}`);
+    throw new Error(`the assistant did not quote Taş Kafe's live count:\n${answer}`);
   }
-  console.log(`ok: the assistant quoted the live parking numbers (${phrase(before)})`);
+  console.log(`ok: the assistant quoted Taş Kafe's live count (${phrase(before)})`);
   console.log("E2E SMOKE PASSED");
 } catch (error) {
   console.error(`E2E SMOKE FAILED: ${error.message}`);
@@ -102,4 +142,5 @@ try {
   process.exitCode = 1;
 } finally {
   services.forEach(stop);
+  rmSync(clips, { recursive: true, force: true });
 }

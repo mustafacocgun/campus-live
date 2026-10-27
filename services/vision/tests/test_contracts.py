@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from conftest import NOW, REPO_ROOT
-from vision.contracts import CameraReading, ParkingState
+from vision.contracts import CameraReading, DensityCell, ParkingState
 
 SCHEMA = json.loads((REPO_ROOT / "packages/contracts/schemas/camera-reading.schema.json").read_text())
 
@@ -52,3 +52,31 @@ def test_measured_at_is_sent_as_utc() -> None:
         measured_at=istanbul_ten,
     )
     assert reading.to_json()["measuredAt"] == "2026-10-27T07:00:00Z"
+
+
+def test_reading_with_cells_matches_contract_schema() -> None:
+    reading = CameraReading(
+        camera_id="kutuphane-onu",
+        kind="crowd",
+        count=3,
+        level="low",
+        cells=[DensityCell(lat=40.742, lng=30.332, weight=1.5)],
+        source="demo-footage",
+        measured_at=NOW,
+    )
+    jsonschema.validate(reading.to_json(), SCHEMA)
+    assert reading.to_json()["cells"] == [{"lat": 40.742, "lng": 30.332, "weight": 1.5}]
+
+
+def test_model_rejects_cells_on_parking() -> None:
+    with pytest.raises(ValidationError, match="crowd cameras only"):
+        CameraReading(
+            camera_id="otopark-a",
+            kind="parking",
+            count=28,
+            level="medium",
+            cells=[DensityCell(lat=40.742, lng=30.332, weight=1.0)],
+            parking=ParkingState(total=40, free=12),
+            source="demo-footage",
+            measured_at=NOW,
+        )

@@ -1,0 +1,214 @@
+{
+  "_note": "Camera spots are PLACEHOLDERS (CLAUDE.md §0.5): placed next to OpenStreetMap features (© OpenStreetMap contributors, ODbL), each on a building's facade or a walkway, looking at the space in front of it. No real campus camera exists here. The 7 'Kütüphane meydanı' cameras are the WILDTRACK views around the plaza east of the library; their poses are estimates until a vision tool writes them from the dataset calibration. heading: degrees clockwise from north; fovDeg: horizontal view angle; rangeM: far edge of the view in metres. Shared by services/api and services/vision: ids and kinds must match services/vision/configs.",
+  "cameras": [
+    {
+      "id": "kutuphane-meydani-1",
+      "name": "Kütüphane meydanı 1",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741695,
+      "longitude": 30.332652,
+      "heading": 180,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-meydani-2",
+      "name": "Kütüphane meydanı 2",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741647,
+      "longitude": 30.332803,
+      "heading": 225,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-meydani-3",
+      "name": "Kütüphane meydanı 3",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741533,
+      "longitude": 30.332866,
+      "heading": 270,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-meydani-4",
+      "name": "Kütüphane meydanı 4",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741419,
+      "longitude": 30.332803,
+      "heading": 315,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-meydani-5",
+      "name": "Kütüphane meydanı 5",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741371,
+      "longitude": 30.332652,
+      "heading": 0,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-meydani-6",
+      "name": "Kütüphane meydanı 6",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741419,
+      "longitude": 30.332501,
+      "heading": 45,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-meydani-7",
+      "name": "Kütüphane meydanı 7",
+      "section": "Kütüphane meydanı",
+      "kind": "crowd",
+      "latitude": 40.741647,
+      "longitude": 30.332501,
+      "heading": 135,
+      "fovDeg": 80,
+      "rangeM": 30
+    },
+    {
+      "id": "kutuphane-bati",
+      "name": "Kütüphane batı",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.741681,
+      "longitude": 30.331756,
+      "heading": 212,
+      "fovDeg": 70,
+      "rangeM": 35
+    },
+    {
+      "id": "kutuphane-yolu",
+      "name": "Kütüphane yolu",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.742314,
+      "longitude": 30.332786,
+      "heading": 175,
+      "fovDeg": 60,
+      "rangeM": 40
+    },
+    {
+      "id": "merkez-kantin",
+      "name": "Merkez Kantin",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.742126,
+      "longitude": 30.331715,
+      "heading": 45,
+      "fovDeg": 70,
+      "rangeM": 25
+    },
+    {
+      "id": "tas-kafe",
+      "name": "Taş Kafe",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.742798,
+      "longitude": 30.33316,
+      "heading": 350,
+      "fovDeg": 70,
+      "rangeM": 30
+    },
+    {
+      "id": "kantin",
+      "name": "Kantin",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.743291,
+      "longitude": 30.333775,
+      "heading": 299,
+      "fovDeg": 70,
+      "rangeM": 25
+    },
+    {
+      "id": "yemekhane",
+      "name": "Öğrenci Yemekhanesi",
+      "section": "Yemekhane",
+      "kind": "crowd",
+      "latitude": 40.744127,
+      "longitude": 30.330775,
+      "heading": 109,
+      "fovDeg": 70,
+      "rangeM": 35
+    },
+    {
+      "id": "yemekhane-yolu",
+      "name": "Yemekhane yolu",
+      "section": "Yemekhane",
+      "kind": "crowd",
+      "latitude": 40.743797,
+      "longitude": 30.330802,
+      "heading": 356,
+      "fovDeg": 60,
+      "rangeM": 28
+    },
+    {
+      "id": "muhendislik",
+      "name": "Mühendislik Dekanlığı",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.742328,
+      "longitude": 30.330799,
+      "heading": 128,
+      "fovDeg": 70,
+      "rangeM": 25
+    },
+    {
+      "id": "bilisim",
+      "name": "Bilişim Fakültesi",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.74209,
+      "longitude": 30.32623,
+      "heading": 99,
+      "fovDeg": 70,
+      "rangeM": 40
+    },
+    {
+      "id": "fen-edebiyat",
+      "name": "Fen-Edebiyat Fakültesi",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.744609,
+      "longitude": 30.329745,
+      "heading": 178,
+      "fovDeg": 70,
+      "rangeM": 35
+    },
+    {
+      "id": "rektorluk",
+      "name": "Rektörlük",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.741165,
+      "longitude": 30.332901,
+      "heading": 20,
+      "fovDeg": 70,
+      "rangeM": 30
+    },
+    {
+      "id": "kongre-merkezi",
+      "name": "Kongre Merkezi",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.741184,
+      "longitude": 30.329453,
+      "heading": 211,
+      "fovDeg": 70,
+      "rangeM": 35
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 "use client";
 
-import { isDemo, LEVEL_COLOR, LEVEL_LABEL_TR } from "@campus-live/client";
+import { isDemo, LEVEL_COLOR, LEVEL_LABEL_TR, mergeCells } from "@campus-live/client";
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLiveCameras } from "@/lib/use-live-cameras";
 import { AssistantPanel } from "./AssistantPanel";
 import { CameraDetail } from "./CameraDetail";
@@ -11,8 +11,12 @@ import { FilterChips } from "./FilterChips";
 import { LogoMark } from "./icons";
 import { SummaryStrip } from "./SummaryStrip";
 
-// Leaflet needs the browser's window, so the map is never rendered on the server.
+// MapLibre draws with the browser's WebGL, so the map is never rendered on the server.
 const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
+
+// The heat layer's ramp (LiveMap's heatmap-color), as a CSS gradient for the legend.
+const HEAT_RAMP =
+  "linear-gradient(to right, rgba(37,99,235,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
 
 export function LiveDashboard() {
   const { cameras, connected, error, history } = useLiveCameras();
@@ -21,6 +25,12 @@ export function LiveDashboard() {
   const mapBox = useRef<HTMLDivElement>(null);
   const demo = cameras.some((camera) => camera.reading && isDemo(camera.reading));
   const visible = section ? cameras.filter((camera) => camera.section === section) : cameras;
+  // The heat of the cameras on the map: a section filter applies to the cloud too. Keyed on the
+  // inputs, not on `visible`, which is a new array on every render while a filter is on.
+  const cells = useMemo(
+    () => mergeCells(section ? cameras.filter((camera) => camera.section === section) : cameras),
+    [cameras, section],
+  );
   const selected = cameras.find((camera) => camera.id === selectedId) ?? null;
   // The wide layout always has room for a detail column, so it shows the first camera until one is picked.
   const detailed = selected ?? visible[0] ?? null;
@@ -82,7 +92,7 @@ export function LiveDashboard() {
           >
             i
           </span>
-          Demo verisi: kameralar demo videolarıdır ve sayılar tahminidir.
+          Demo görüntüsü: kameralar kampüs kamerası değil, demo videolarıdır; sayılar tahminidir.
         </p>
       )}
       <FilterChips cameras={cameras} value={section} onChange={chooseSection} />
@@ -95,20 +105,33 @@ export function LiveDashboard() {
             ref={mapBox}
             className="relative h-[60vh] scroll-mt-4 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm lg:h-auto lg:min-h-0 lg:flex-1"
           >
-            <LiveMap cameras={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
-            <div className="pointer-events-none absolute right-3 bottom-8 z-[1000] flex flex-wrap gap-x-3 gap-y-1 rounded-xl border border-line bg-surface/90 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur">
-              {(["low", "medium", "high"] as const).map((level) => (
-                <span key={level} className="flex items-center gap-1.5">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: LEVEL_COLOR[level] }}
-                  />
-                  {LEVEL_LABEL_TR[level]}
+            <LiveMap
+              cameras={visible}
+              cells={cells}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelectedId}
+            />
+            <div className="pointer-events-none absolute right-3 bottom-8 z-[1000] flex flex-col gap-1.5 rounded-xl border border-line bg-surface/90 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur">
+              <span className="flex items-center gap-2">
+                Kalabalık
+                <span className="text-muted">Az</span>
+                <span className="h-2 w-24 rounded-full" style={{ backgroundImage: HEAT_RAMP }} />
+                <span className="text-muted">Yoğun</span>
+              </span>
+              <span className="flex flex-wrap gap-x-3 gap-y-1">
+                {(["low", "medium", "high"] as const).map((level) => (
+                  <span key={level} className="flex items-center gap-1.5">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: LEVEL_COLOR[level] }}
+                    />
+                    {LEVEL_LABEL_TR[level]}
+                  </span>
+                ))}
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: LEVEL_COLOR.stale }} />
+                  Görüntü yok
                 </span>
-              ))}
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: LEVEL_COLOR.stale }} />
-                Veri yok
               </span>
             </div>
             {/* Narrower screens have no detail column: the detail opens over the map until closed. */}

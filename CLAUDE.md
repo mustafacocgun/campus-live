@@ -96,14 +96,17 @@ decisions that are the team's · never claim an improvement you did not measure.
 
 ## §3 Vision standards
 
-1. **The pipeline:** frame → detector (YOLO11n) → analyzer (crowd | parking | traffic) →
-   `CameraReading` → `POST /internal/readings`. Nothing else leaves the vision service.
-2. **Cameras are keyed by id.** Every camera in `services/vision/configs/` exists in
-   `services/api/config/cameras.json` with the same kind; a test checks this.
+1. **The pipeline:** frame → detector (YOLO11n) → people's feet projected onto the map (camera pose or
+   dataset calibration) → analyzer (crowd | parking | traffic) → `CameraReading` (count + 3 m density
+   cells) → `POST /internal/readings`. Nothing else leaves the vision service: cells are aggregates,
+   never identities, tracks or per-person positions.
+2. **Cameras are keyed by id.** Every camera in `services/vision/configs/` exists in the shared
+   registry `config/cameras.json` with the same kind and a pose; a test checks this.
 3. **Counts are estimates.** They are smoothed (median of the last 5 samples), labelled demo, and
    marked stale after 15 s without a reading (grey on the map).
-4. **Simulated mode is the default for development** (`VISION_DETECTOR=simulated`): no video, no GPU.
-   YOLO runs on a GPU machine with the `yolo` extra.
+4. **Live YOLO is the only data source in the app** (each teammate runs vision on a GPU PC with the
+   `yolo` extra). Nothing random or simulated is ever shown. The `test-boxes` detector (white
+   rectangles in synthetic clips) exists for automated tests only.
 5. **Accuracy needs a measurement:** hand-count a clip, run the counter on it, report both numbers and
    the clip's conditions. One clip is not a rate.
 6. **Levels come from per-camera thresholds**, which are guesses until a hand count calibrates them.
@@ -118,7 +121,8 @@ decisions that are the team's · never claim an improvement you did not measure.
    assistant. Everything else is out of scope unless the team adds it here.
 2. **Prefer an honest "Demo verisi" label to a live-looking fake.**
 3. **Working once is not working on stage.** Every live dependency — camera, LLM API, network — has a
-   fallback (simulated readings, the rule-based answer).
+   fallback: a camera without a stream turns grey ("Görüntü yok") instead of showing made-up
+   numbers, and the assistant falls back to the rule-based answer.
 4. **Never claim** real campus camera data, university endorsement or an accuracy you did not measure.
 5. **One module wraps the LLM provider** (`services/api/src/modules/assistant/llm-client.ts`),
    server-side only; base URL, key and model come from env. Switching provider touches that module
@@ -148,20 +152,21 @@ decisions that are the team's · never claim an improvement you did not measure.
 
 | Part                           | Choice                                                                         | Status  |
 | ------------------------------ | ------------------------------------------------------------------------------ | ------- |
-| Web                            | Next.js 16 (App Router) + react-leaflet, `apps/web`                            | in repo |
-| Mobile                         | Expo SDK 58 (React Native) + react-native-maps, `apps/mobile`                  | in repo |
+| Web                            | Next.js 16 (App Router) + MapLibre GL heat map, `apps/web`                     | in repo |
+| Mobile                         | Expo SDK 58 + MapLibre React Native (development build), `apps/mobile`         | in repo |
 | API                            | Express 5 + TypeScript + Socket.IO, `services/api`                             | in repo |
 | Vision                         | Python 3.12, FastAPI, supervision, YOLO11n (optional extra), `services/vision` | in repo |
 | Contracts                      | zod 4 schemas + generated JSON Schema, `packages/contracts`                    | in repo |
-| Live state                     | in memory in the API                                                           | in repo |
+| Live state                     | in memory in the API (latest reading + density cells per camera)               | in repo |
+| Footage                        | WILDTRACK + licensed stock clips, each in `docs/data-sources.md`               | in repo |
 | History, accounts, push alerts | Postgres, push tokens                                                          | open    |
 | LLM provider                   | any OpenAI-compatible endpoint via `LLM_*` env                                 | open    |
 | Parking and traffic analyzers  | slot polygons; line or zone counting                                           | planned |
 
 ```bash
 npm install                      # once, from the root (npm workspaces; Node 22, .nvmrc)
-npm run dev                      # api :4000 + web :3000 + vision :8001 in simulated mode
-npm run dev:mobile               # Expo; set EXPO_PUBLIC_API_URL to this machine's LAN address
+npm run dev                      # api :4000 + web :3000 + vision :8001 (live YOLO, GPU PC)
+npm run dev:mobile               # Expo dev client (needs a development build); EXPO_PUBLIC_API_URL = LAN address
 npm run typecheck && npm test    # every workspace
 cd services/vision && pytest     # vision tests (venv with `pip install -e ".[dev]"`)
 ```

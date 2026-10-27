@@ -1,6 +1,6 @@
 "use client";
 
-import { type LiveState, startLiveFeed } from "@campus-live/client";
+import { EMPTY_LIVE_STATE, type LiveState, startLiveFeed } from "@campus-live/client";
 import { useEffect, useState } from "react";
 import { API_URL } from "./config";
 import { appendReadings, type SessionHistory } from "./session-history";
@@ -10,7 +10,7 @@ import { appendReadings, type SessionHistory } from "./session-history";
  * readings this page has received so far (for the "Bu oturum" chart).
  */
 export function useLiveCameras(): LiveState & { history: SessionHistory } {
-  const [state, setState] = useState<LiveState>({ cameras: [], connected: false, error: null });
+  const [state, setState] = useState<LiveState>(EMPTY_LIVE_STATE);
   const [history, setHistory] = useState<SessionHistory>({});
   useEffect(
     () =>

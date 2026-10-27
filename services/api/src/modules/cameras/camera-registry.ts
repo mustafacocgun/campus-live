@@ -1,8 +1,14 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { Camera } from "@campus-live/contracts";
 import { z } from "zod";
 
-/** The cameras the map shows, from config/cameras.json. */
+/** config/cameras.json at the repo root, shared with the vision service (same depth from src/ and dist/). */
+export const SHARED_CAMERAS_FILE = fileURLToPath(
+  new URL("../../../../../config/cameras.json", import.meta.url),
+);
+
+/** The cameras the map shows, from the registry file. */
 export class CameraRegistry {
   private readonly byId = new Map<string, Camera>();
 

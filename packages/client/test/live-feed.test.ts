@@ -12,6 +12,9 @@ const CAMERA: LiveCamera = {
   kind: "parking",
   latitude: 40.74,
   longitude: 30.33,
+  heading: 0,
+  fovDeg: 70,
+  rangeM: 30,
   reading: null,
   stale: true,
   ageMs: null,
@@ -29,11 +32,11 @@ async function freePort(): Promise<number> {
 }
 
 /** A stand-in API: GET /api/cameras plus Socket.IO, on a given port. */
-async function startApi(port: number) {
+async function startApi(port: number, cameras: LiveCamera[] = [CAMERA]) {
   const server = createServer((req, res) => {
     res
       .writeHead(200, { "content-type": "application/json" })
-      .end(JSON.stringify({ success: true, data: [CAMERA] }));
+      .end(JSON.stringify({ success: true, data: cameras }));
   });
   const io = new Server(server);
   await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
@@ -109,3 +112,52 @@ it("judges staleness by when readings arrive, not by the reading's own clock", a
   await waitFor(states, () => states.length >= ticked + 3, 3_000); // a few 100 ms ticks later
   expect(states.at(-1)!.cameras[0].stale).toBe(false);
 }, 15_000);
+
+it("a camera that falls silent leaves the heat at the next tick", async () => {
+  const port = await freePort();
+  const cells = [{ lat: 40.7428, lng: 30.3332, weight: 2.5 }];
+  // Its last reading reached the API 14.9 s ago: fresh at load, stale a moment later.
+  const fading: LiveCamera = {
+    ...CAMERA,
+    id: "tas-kafe",
+    kind: "crowd",
+    stale: false,
+    ageMs: 14_900,
+    reading: {
+      cameraId: "tas-kafe",
+      kind: "crowd",
+      count: 3,
+      level: "low",
+      cells,
+      source: "demo-footage",
+      measuredAt: new Date().toISOString(),
+    },
+  };
+  await startApi(port, [fading]);
+  const states: LiveState[] = [];
+  cleanup.push(startLiveFeed(`http://127.0.0.1:${port}`, (state) => states.push(state), 50));
+  await waitFor(states, (state) => state.cells.length === 1, 5_000);
+  const silent = await waitFor(states, (state) => state.cameras[0]?.stale === true, 5_000);
+  expect(silent.cells).toEqual([]);
+});
+
+it("live readings bring their cells to the campus heat", async () => {
+  const port = await freePort();
+  const crowd: LiveCamera = { ...CAMERA, id: "tas-kafe", name: "Taş Kafe", kind: "crowd" };
+  const io = await startApi(port, [crowd]);
+  const states: LiveState[] = [];
+  cleanup.push(startLiveFeed(`http://127.0.0.1:${port}`, (state) => states.push(state)));
+  await waitFor(states, (state) => state.connected && state.cameras.length === 1, 5_000);
+  const cells = [{ lat: 40.7428, lng: 30.3332, weight: 2.5 }];
+  io.emit(SOCKET_EVENTS.reading, {
+    cameraId: "tas-kafe",
+    kind: "crowd",
+    count: 3,
+    level: "low",
+    cells,
+    source: "demo-footage",
+    measuredAt: new Date().toISOString(),
+  });
+  const heated = await waitFor(states, (state) => state.cells.length > 0, 5_000);
+  expect(heated.cells).toEqual(cells);
+});

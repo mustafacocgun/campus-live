@@ -2,7 +2,7 @@ import type { ApiResponse, CameraReading, LiveCamera } from "@campus-live/contra
 import { SOCKET_EVENTS } from "@campus-live/contracts";
 import { io as connect } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadRegistry } from "../src/modules/cameras/camera-registry.js";
+import { loadRegistry, SHARED_CAMERAS_FILE } from "../src/modules/cameras/camera-registry.js";
 import { LiveStore } from "../src/modules/live/live-store.js";
 import { env, ingest, reading, startServer } from "./helpers.js";
 
@@ -122,5 +122,56 @@ describe("Socket.IO", () => {
     await ingest(server.url, { readings: [sent] });
     expect(await received).toEqual(sent);
     client.close();
+  });
+});
+
+describe("shared camera registry", () => {
+  it("loads the shared registry with poses", () => {
+    const registry = loadRegistry(SHARED_CAMERAS_FILE);
+    expect(registry.list().length).toBeGreaterThanOrEqual(10);
+    for (const camera of registry.list()) {
+      expect(camera.heading).toBeGreaterThanOrEqual(0);
+      expect(camera.fovDeg).toBeGreaterThanOrEqual(10);
+      expect(camera.rangeM).toBeGreaterThanOrEqual(5);
+    }
+  });
+});
+
+describe("density cells", () => {
+  const cells = [{ lat: 40.7419, lng: 30.3318, weight: 1.5 }];
+  const crowd = (overrides: Partial<CameraReading> = {}) =>
+    reading({ cameraId: "kafe-merkez", kind: "crowd", count: 7, parking: undefined, cells, ...overrides });
+
+  it("accepts crowd readings with cells and serves them", async () => {
+    expect((await ingest(server.url, { readings: [crowd()] })).status).toBe(202);
+    const cafe = (await cameras()).find((camera) => camera.id === "kafe-merkez");
+    expect(cafe?.reading?.cells).toEqual(cells);
+  });
+
+  it("rejects cells on a non-crowd camera", async () => {
+    // otopark-a is a parking camera: its readings never carry cells.
+    expect((await ingest(server.url, { readings: [reading({ cells })] })).status).toBe(400);
+  });
+
+  it("accepts the largest batch the contract allows", async () => {
+    // 100 readings of 2000 cells each, about 10 MB: a crowded batch must never bounce off a size limit.
+    const many = Array.from({ length: 2000 }, (_, i) => ({
+      lat: 40.7416123 + i * 1e-7,
+      lng: 30.3325456,
+      weight: 1.234,
+    }));
+    const readings = Array.from({ length: 100 }, (_, i) =>
+      crowd({ cameraId: i % 2 ? "kafe-merkez" : "kutuphane-giris", cells: many }),
+    );
+    expect((await ingest(server.url, { readings })).status).toBe(202);
+  });
+
+  it("checks the token before it reads a body", async () => {
+    const response = await fetch(`${server.url}/internal/readings`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "x".repeat(300_000),
+    });
+    expect(response.status).toBe(401);
   });
 });

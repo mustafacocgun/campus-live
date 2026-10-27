@@ -19,6 +19,9 @@ const cameras: LiveCamera[] = [
     kind: "crowd",
     latitude: 40.7412,
     longitude: 30.3306,
+    heading: 0,
+    fovDeg: 70,
+    rangeM: 30,
     stale: false,
     ageMs: 4_000,
     reading: {
@@ -37,6 +40,9 @@ const cameras: LiveCamera[] = [
     kind: "crowd",
     latitude: 40.7419,
     longitude: 30.3318,
+    heading: 0,
+    fovDeg: 70,
+    rangeM: 30,
     stale: false,
     ageMs: 4_000,
     reading: {
@@ -55,6 +61,9 @@ const cameras: LiveCamera[] = [
     kind: "parking",
     latitude: 40.7431,
     longitude: 30.3297,
+    heading: 0,
+    fovDeg: 70,
+    rangeM: 30,
     stale: false,
     ageMs: 4_000,
     reading: reading({ measuredAt: FOUR_SECONDS_AGO }),
@@ -66,6 +75,9 @@ const cameras: LiveCamera[] = [
     kind: "traffic",
     latitude: 40.7405,
     longitude: 30.333,
+    heading: 0,
+    fovDeg: 70,
+    rangeM: 30,
     stale: true,
     ageMs: 3_600_000,
     reading: {
@@ -152,6 +164,103 @@ describe("live context and fallback", () => {
       expect(answer).toContain("Otopark A: 12 boş yer var (toplam 40)");
       expect(answer).not.toContain("Kütüphane");
     }
+  });
+});
+
+describe("fallback on the campus map", () => {
+  const crowdCamera = (
+    id: string,
+    name: string,
+    section: string,
+    count: number,
+    stale = false,
+  ): LiveCamera => ({
+    id,
+    name,
+    section,
+    kind: "crowd",
+    latitude: 40.742,
+    longitude: 30.332,
+    heading: 0,
+    fovDeg: 70,
+    rangeM: 30,
+    stale,
+    ageMs: stale ? 3_600_000 : 4_000,
+    reading: {
+      cameraId: id,
+      kind: "crowd",
+      count,
+      level: count >= 10 ? "high" : "medium",
+      source: "demo-footage",
+      measuredAt: FOUR_SECONDS_AGO,
+    },
+  });
+  const campus = [
+    crowdCamera("kutuphane-bati", "Kütüphane batı", "Kütüphane", 4),
+    crowdCamera("kutuphane-yolu", "Kütüphane yolu", "Kütüphane", 5),
+    crowdCamera("tas-kafe", "Taş Kafe", "Kafeler", 11),
+    crowdCamera("yemekhane", "Öğrenci Yemekhanesi", "Yemekhane", 8),
+    crowdCamera("bilisim", "Bilişim Fakültesi", "Fakülteler", 6),
+    crowdCamera("fen-edebiyat", "Fen-Edebiyat Fakültesi", "Fakülteler", 2),
+    crowdCamera("rektorluk", "Rektörlük", "Kampüs binaları", 30, true),
+  ];
+
+  it("the fallback names the busiest crowd camera for a general crowd question", () => {
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", campus, NOW);
+    const [header, first] = answer.split("\n");
+    expect(header).toBe("Canlı verilere göre en kalabalık yerler:");
+    expect(first).toContain("Taş Kafe: 11 kişi");
+    expect(answer).toContain("Öğrenci Yemekhanesi: 8 kişi");
+    expect(answer).not.toContain("Fen-Edebiyat"); // the busiest three only
+    expect(answer).not.toContain("Rektörlük"); // no fresh reading: never "the busiest"
+  });
+
+  it("says so when no crowd camera has a fresh reading", () => {
+    const allStale = campus.map((camera) => ({ ...camera, stale: true }));
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", allStale, NOW);
+    expect(answer).toContain("Kalabalık: şu an hiçbir kameradan güncel veri yok.");
+    expect(answer).not.toMatch(/\d+ kişi/);
+  });
+
+  it("never lists views of one crowd as several busy places", () => {
+    // The plaza's views see the same people: one of them stands for the plaza in the busiest list.
+    const plaza = [
+      crowdCamera("kutuphane-meydani-1", "Kütüphane meydanı 1", "Kütüphane meydanı", 20),
+      crowdCamera("kutuphane-meydani-2", "Kütüphane meydanı 2", "Kütüphane meydanı", 19),
+      crowdCamera("kutuphane-meydani-3", "Kütüphane meydanı 3", "Kütüphane meydanı", 18),
+    ];
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", [...plaza, ...campus], NOW);
+    expect(answer).toContain("Kütüphane meydanı 1: 20 kişi");
+    expect(answer).not.toContain("Kütüphane meydanı 2");
+    expect(answer).toContain("Taş Kafe: 11 kişi"); // the next busiest places still make the list
+  });
+
+  it("does not take students for the student dining hall", () => {
+    const answer = fallbackAnswer("Öğrenciler en çok nerede kalabalık?", campus, NOW);
+    expect(answer.split("\n")[0]).toBe("Canlı verilere göre en kalabalık yerler:");
+  });
+
+  it("finds a place named with or without a suffix", () => {
+    const faculty = fallbackAnswer("Fakülte kalabalık mı?", campus, NOW);
+    expect(faculty).toContain("Bilişim Fakültesi: 6 kişi");
+    expect(faculty).toContain("Fen-Edebiyat Fakültesi: 2 kişi");
+    expect(fallbackAnswer("Fen Edebiyat kalabalık mı?", campus, NOW)).toContain(
+      "Fen-Edebiyat Fakültesi: 2 kişi",
+    );
+  });
+
+  it("does not take a short word for a place", () => {
+    // "yol" asks about traffic, not about the walkway camera "Kütüphane yolu".
+    const answer = fallbackAnswer("Yol trafiği nasıl?", campus, NOW);
+    expect(answer).toContain("Bu konuda verim yok");
+    expect(answer).not.toContain("Kütüphane yolu");
+  });
+
+  it("offers only what the cameras count when it has no data", () => {
+    const answer = fallbackAnswer("Otoparkta boş yer var mı?", campus, NOW);
+    expect(answer).toContain("Bu konuda verim yok");
+    expect(answer).not.toContain("Otopark");
+    expect(answer).toContain("kalabalık");
   });
 });
 

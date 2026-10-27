@@ -18,8 +18,10 @@ npm test -w @campus-live/api
 | `POST /api/assistant/chat` | web, mobile        | `{message}` → `{answer, via}`: the LLM grounded on live data, or the rule-based fallback; 10 per minute per client |
 | Socket.IO `reading`        | web, mobile        | Every accepted reading, as it arrives                                                                              |
 
-Cameras live in `config/cameras.json`. Their positions are placeholders until the team sets real ones
-(CLAUDE.md §0.5), and every id must also exist in `services/vision/configs/` with the same kind.
+Cameras live in `config/cameras.json` at the repo root, shared with the vision service: id, name,
+section, kind, position and pose (`heading`, `fovDeg`, `rangeM`). The spots are placeholders until the
+team sets real ones (CLAUDE.md §0.5). `CAMERAS_FILE` overrides the path; the tests use their own
+`test/fixtures/cameras.json`.
 
 ## The assistant
 

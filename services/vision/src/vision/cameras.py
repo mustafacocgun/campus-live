@@ -25,18 +25,40 @@ class Thresholds(BaseModel):
         return self
 
 
+class Anchor(BaseModel):
+    """Where the dataset's world origin sits on campus, and the compass bearing of its +y axis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+    rotation_deg: float = 0.0
+
+
+class WildtrackCalibration(BaseModel):
+    """Project through WILDTRACK's own calibration instead of the registry's estimated pose."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    camera: int = Field(ge=1, le=7)  # C1..C7
+    anchor: Anchor
+    dataset_dir: str = "datasets/wildtrack"
+    # Belongs to the dataset's undistorted frames; the raw videos need "intrinsic_original".
+    intrinsics: str = "intrinsic_zero"
+    world_unit_m: float = Field(default=0.01, gt=0)  # centimetres
+
+
 class CameraConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")  # a typo in the YAML fails loudly
 
     id: str = Field(pattern=r"^[a-z0-9-]+$")
     kind: CameraKind
-    # A video file path or a webcam index; not needed in simulated mode.
+    # A video file path or a webcam index. A camera without one does not run (grey on the map).
     source: str | None = None
-    sample_fps: float = Field(default=2.0, gt=0, le=30)
+    sample_fps: float = Field(default=5.0, gt=0, le=30)
     zone: list[Point] | None = None
     thresholds: Thresholds | None = None
-    # Parking slots the simulated feed pretends to have.
-    simulated_total: int = Field(default=20, ge=1)
+    wildtrack: WildtrackCalibration | None = None
 
     @model_validator(mode="after")
     def _valid(self) -> Self:

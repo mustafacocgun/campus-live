@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { fileURLToPath } from "node:url";
 import type { CameraReading } from "@campus-live/contracts";
 import { createApp } from "../src/app.js";
 import type { LlmClient } from "../src/modules/assistant/llm-client.js";
@@ -10,7 +11,11 @@ import { LiveStore } from "../src/modules/live/live-store.js";
 
 export const TOKEN = "test-token-1234567890";
 
-export const env = EnvSchema.parse({ VISION_INGEST_TOKEN: TOKEN, CAMERAS_FILE: "config/cameras.json" });
+// The tests' own cameras, so the demo registry (config/cameras.json) can change freely.
+export const env = EnvSchema.parse({
+  VISION_INGEST_TOKEN: TOKEN,
+  CAMERAS_FILE: fileURLToPath(new URL("./fixtures/cameras.json", import.meta.url)),
+});
 
 export function reading(overrides: Partial<CameraReading> = {}): CameraReading {
   return {
@@ -25,7 +30,7 @@ export function reading(overrides: Partial<CameraReading> = {}): CameraReading {
   };
 }
 
-/** The real app and Socket.IO on a random port, with the real camera registry. */
+/** The real app and Socket.IO on a random port, with the test camera registry. */
 export async function startServer(llm: LlmClient | null = null) {
   const registry = loadRegistry(env.CAMERAS_FILE);
   const store = new LiveStore(registry, env.STALE_AFTER_MS);

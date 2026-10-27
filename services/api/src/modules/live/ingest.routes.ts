@@ -1,14 +1,18 @@
 import { ReadingBatch } from "@campus-live/contracts";
-import { Router } from "express";
+import express, { Router } from "express";
 import { HttpError, ok } from "../../lib/http.js";
 import { requireServiceToken } from "../../middleware/require-service-token.js";
 import type { CameraRegistry } from "../cameras/camera-registry.js";
 import type { LiveStore } from "./live-store.js";
 
+// Any batch the contract allows: 100 readings of up to 2000 density cells, about 50 bytes each.
+const BODY_LIMIT = "12mb";
+
 /** POST /internal/readings: the vision service pushes readings here. */
 export function ingestRouter(deps: { registry: CameraRegistry; store: LiveStore; token: string }): Router {
   const router = Router();
-  router.post("/", requireServiceToken(deps.token), (req, res) => {
+  // The token is checked before the body is read, so only the vision service can send large ones.
+  router.post("/", requireServiceToken(deps.token), express.json({ limit: BODY_LIMIT }), (req, res) => {
     const { readings } = ReadingBatch.parse(req.body);
     const rejected: string[] = [];
     for (const reading of readings) {

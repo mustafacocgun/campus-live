@@ -23,7 +23,8 @@ export function createApp({ registry, store, env, llm }: AppDeps) {
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(cors({ origin: corsOrigins(env) }));
-  app.use(express.json({ limit: "256kb" }));
+  // The public routes take small bodies; the ingest route parses its own, after the token check.
+  app.use("/api", express.json({ limit: "256kb" }));
 
   app.use("/api/health", healthRouter);
   app.use("/api/cameras", camerasRouter(store));

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { AssistantRequest, CameraReading, jsonSchemas } from "../src/index.js";
+import { AssistantRequest, Camera, CameraReading, jsonSchemas } from "../src/index.js";
 
 const crowd = {
   cameraId: "kutuphane-giris",
@@ -53,6 +53,37 @@ describe("CameraReading", () => {
     expect(CameraReading.safeParse({ ...crowd, measuredAt: "2026-10-27T10:00:00+03:00" }).success).toBe(
       false,
     );
+  });
+});
+
+describe("density cells and camera pose", () => {
+  const cells = [{ lat: 40.742, lng: 30.332, weight: 1.5 }];
+
+  it("accepts cells on a crowd reading", () => {
+    expect(CameraReading.safeParse({ ...crowd, cells }).success).toBe(true);
+  });
+
+  it("rejects cells on a parking reading", () => {
+    expect(CameraReading.safeParse({ ...parking, cells }).success).toBe(false);
+  });
+
+  it("rejects a negative cell weight", () => {
+    expect(CameraReading.safeParse({ ...crowd, cells: [{ ...cells[0], weight: -0.1 }] }).success).toBe(false);
+  });
+
+  it("rejects a heading of 360 and accepts 359.9", () => {
+    const camera = {
+      id: "kutuphane-onu",
+      name: "Kütüphane önü",
+      section: "Kütüphane",
+      kind: "crowd",
+      latitude: 40.7417,
+      longitude: 30.3321,
+      fovDeg: 70,
+      rangeM: 35,
+    };
+    expect(Camera.safeParse({ ...camera, heading: 360 }).success).toBe(false);
+    expect(Camera.safeParse({ ...camera, heading: 359.9 }).success).toBe(true);
   });
 });
 

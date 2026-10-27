@@ -1,3 +1,4 @@
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -35,11 +36,47 @@ def write_clip(path: str, boxes_per_frame: list[list[tuple[int, int, int, int]]]
     return path
 
 
-def detect_white_boxes(frame: np.ndarray) -> sv.Detections:
-    """Stands in for YOLO: one person per white blob."""
+# A synthetic calibrated camera (OpenCV pinhole) with strong barrel distortion, like a GoPro: 15 m
+# behind the world origin, 5 m up, looking along +y and 20 degrees down. World unit: cm.
+SYNTHETIC_K = np.array([[1000.0, 0, 960], [0, 1000.0, 540], [0, 0, 1]])
+SYNTHETIC_DIST = np.array([-0.25, 0.08, 0.001, -0.0005, 0.0])
+
+
+def synthetic_camera() -> tuple[np.ndarray, np.ndarray]:
+    """R (world -> camera) and t of the synthetic camera."""
+    tilt = math.radians(20)
+    forward = np.array([0.0, math.cos(tilt), -math.sin(tilt)])
+    right = np.array([1.0, 0.0, 0.0])
+    rotation = np.stack([right, np.cross(forward, right), forward])
+    return rotation, -rotation @ np.array([0.0, -1500.0, 500.0])
+
+
+def synthetic_pixels(rotation: np.ndarray, t: np.ndarray, ground_cm: np.ndarray) -> np.ndarray:
+    """Where ground points (x, y in cm, on Z = 0) appear in the synthetic camera's 1920x1080 image."""
     import cv2
 
-    _, mask = cv2.threshold(frame[..., 0], 127, 255, cv2.THRESH_BINARY)
-    count, _, stats, _ = cv2.connectedComponentsWithStats(mask)
-    boxes = [[x, y, x + w, y + h] for x, y, w, h, _ in stats[1:count]]
-    return people(*boxes)
+    world = np.column_stack([ground_cm, np.zeros(len(ground_cm))])
+    px, _ = cv2.projectPoints(world, cv2.Rodrigues(rotation)[0], t, SYNTHETIC_K, SYNTHETIC_DIST)
+    return px.reshape(-1, 2)
+
+
+def write_wildtrack(root: Path, name: str, rotation: np.ndarray, t: np.ndarray) -> Path:
+    """Calibration files in WILDTRACK's layout and formats (the real ones are never committed): the
+    intrinsics as OpenCV FileStorage matrices, the extrinsics as plain numbers."""
+    import cv2
+
+    (root / "calibrations/intrinsic_zero").mkdir(parents=True, exist_ok=True)
+    (root / "calibrations/extrinsic").mkdir(parents=True, exist_ok=True)
+    storage = cv2.FileStorage(
+        str(root / f"calibrations/intrinsic_zero/intr_{name}.xml"), cv2.FILE_STORAGE_WRITE
+    )
+    storage.write("camera_matrix", SYNTHETIC_K)
+    storage.write("distortion_coefficients", SYNTHETIC_DIST.reshape(1, 5))
+    storage.release()
+    rvec = " ".join(repr(float(v)) for v in cv2.Rodrigues(rotation)[0].ravel())
+    tvec = " ".join(repr(float(v)) for v in np.ravel(t))
+    (root / f"calibrations/extrinsic/extr_{name}.xml").write_text(
+        '<?xml version="1.0"?>\n<opencv_storage>\n'
+        f"<rvec>{rvec}</rvec>\n<tvec>{tvec}</tvec>\n</opencv_storage>\n"
+    )
+    return root
