@@ -29,6 +29,9 @@ class Camera(_Contract):
     # Horizontal view angle in degrees, and the far edge of the view in metres.
     fov_deg: float = Field(ge=10, le=170)
     range_m: float = Field(ge=5, le=150)
+    # The place in config/places.json this camera feeds; indoor cameras send counts only.
+    place: str | None = Field(default=None, pattern=r"^[a-z0-9-]+$")
+    indoor: bool = False
 
 
 class DensityCell(_Contract):
