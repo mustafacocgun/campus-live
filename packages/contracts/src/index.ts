@@ -63,11 +63,19 @@ export type CameraReading = z.infer<typeof CameraReading>;
 export const ReadingBatch = z.object({ readings: z.array(CameraReading).min(1).max(100) });
 export type ReadingBatch = z.infer<typeof ReadingBatch>;
 
+/** A camera with no reading for this long is stale (grey). The API's STALE_AFTER_MS defaults to it. */
+export const DEFAULT_STALE_AFTER_MS = 15_000;
+
 /** A camera with its latest reading, as GET /api/cameras returns it. */
 export const LiveCamera = Camera.extend({
   reading: CameraReading.nullable(),
-  /** True when there is no reading, or the latest one is too old to trust. */
+  /** True when there is no reading, or the API received the latest one too long ago. */
   stale: z.boolean(),
+  /**
+   * Milliseconds since the API received the latest reading, by the API's own clock; null without one.
+   * Staleness never compares clocks of different machines (vision PC, API, phone).
+   */
+  ageMs: z.number().int().nonnegative().nullable(),
 });
 export type LiveCamera = z.infer<typeof LiveCamera>;
 

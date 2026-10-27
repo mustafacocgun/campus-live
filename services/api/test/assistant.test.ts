@@ -20,6 +20,7 @@ const cameras: LiveCamera[] = [
     latitude: 40.7412,
     longitude: 30.3306,
     stale: false,
+    ageMs: 4_000,
     reading: {
       cameraId: "kutuphane-giris",
       kind: "crowd",
@@ -37,6 +38,7 @@ const cameras: LiveCamera[] = [
     latitude: 40.7419,
     longitude: 30.3318,
     stale: false,
+    ageMs: 4_000,
     reading: {
       cameraId: "kafe-merkez",
       kind: "crowd",
@@ -54,6 +56,7 @@ const cameras: LiveCamera[] = [
     latitude: 40.7431,
     longitude: 30.3297,
     stale: false,
+    ageMs: 4_000,
     reading: reading({ measuredAt: FOUR_SECONDS_AGO }),
   },
   {
@@ -64,6 +67,7 @@ const cameras: LiveCamera[] = [
     latitude: 40.7405,
     longitude: 30.333,
     stale: true,
+    ageMs: 3_600_000,
     reading: {
       cameraId: "ana-yol",
       kind: "traffic",

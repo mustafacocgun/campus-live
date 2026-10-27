@@ -1,6 +1,13 @@
 import type { CameraReading, LiveCamera } from "@campus-live/contracts";
 import { describe, expect, it } from "vitest";
-import { apiUrlProblem, isDemo, isStale, LEVEL_LABEL_TR, mergeReading, valueText } from "../src/index.js";
+import {
+  apiUrlProblem,
+  isDemo,
+  isStaleSince,
+  LEVEL_LABEL_TR,
+  mergeReading,
+  valueText,
+} from "../src/index.js";
 
 const reading = (overrides: Partial<CameraReading> = {}): CameraReading => ({
   cameraId: "otopark-a",
@@ -22,6 +29,7 @@ const camera = (id: string, kind: LiveCamera["kind"]): LiveCamera => ({
   longitude: 30.33,
   reading: null,
   stale: true,
+  ageMs: null,
 });
 
 describe("mergeReading", () => {
@@ -38,12 +46,12 @@ describe("mergeReading", () => {
   });
 });
 
-describe("isStale", () => {
-  it("isStale after staleAfterMs", () => {
-    const r = reading();
-    expect(isStale(r, new Date("2026-10-27T07:00:14.999Z"), 15_000)).toBe(false);
-    expect(isStale(r, new Date("2026-10-27T07:00:15.001Z"), 15_000)).toBe(true);
-    expect(isStale(null, new Date(), 15_000)).toBe(true);
+describe("isStaleSince", () => {
+  it("is stale when the last reading arrived more than staleAfterMs ago, by this device's clock", () => {
+    const received = Date.parse("2026-10-27T07:00:00.000Z");
+    expect(isStaleSince(received, received + 14_999, 15_000)).toBe(false);
+    expect(isStaleSince(received, received + 15_001, 15_000)).toBe(true);
+    expect(isStaleSince(null, received, 15_000)).toBe(true);
   });
 });
 

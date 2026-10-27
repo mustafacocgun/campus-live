@@ -3,8 +3,8 @@ import type { CameraKind, Level, LiveCamera } from "@campus-live/contracts";
 const KIND_TR: Record<CameraKind, string> = { crowd: "kalabalık", parking: "otopark", traffic: "trafik" };
 export const LEVEL_TR: Record<Level, string> = { low: "Az", medium: "Orta", high: "Yoğun" };
 
-function age(measuredAt: string, now: Date): string {
-  const seconds = Math.max(0, Math.round((now.getTime() - Date.parse(measuredAt)) / 1000));
+function age(ageMs: number): string {
+  const seconds = Math.round(ageMs / 1000);
   return seconds < 60 ? `${seconds} sn önce` : `${Math.round(seconds / 60)} dk önce`;
 }
 
@@ -18,7 +18,7 @@ export function describeCamera(camera: LiveCamera, now: Date): string {
       ? `${reading.parking.free}/${reading.parking.total} boş`
       : `${reading.count} ${reading.kind === "crowd" ? "kişi" : "araç"}`;
   const demo = reading.source === "camera" ? "" : ", demo verisi";
-  return `${label}: ${value}, seviye ${LEVEL_TR[reading.level]}, ${age(reading.measuredAt, now)}${demo}`;
+  return `${label}: ${value}, seviye ${LEVEL_TR[reading.level]}, ${age(camera.ageMs ?? 0)}${demo}`;
 }
 
 /** One line per camera: the only facts the assistant may use. */

@@ -76,21 +76,40 @@ describe("GET /api/cameras", () => {
 describe("LiveStore", () => {
   const store = () => new LiveStore(loadRegistry(env.CAMERAS_FILE), 15_000);
   const at = (iso: string) => reading({ measuredAt: iso });
+  const ms = (iso: string) => Date.parse(iso);
   const parkingOf = (s: LiveStore, now: string) =>
     s.snapshot(new Date(now)).find((c) => c.id === "otopark-a")!;
 
   it("marks a camera stale after STALE_AFTER_MS", () => {
     const s = store();
-    s.upsert(at("2026-10-27T07:00:00.000Z"));
-    expect(parkingOf(s, "2026-10-27T07:00:14.999Z").stale).toBe(false);
+    s.upsert(at("2026-10-27T07:00:00.000Z"), ms("2026-10-27T07:00:00.000Z"));
+    expect(parkingOf(s, "2026-10-27T07:00:14.999Z")).toMatchObject({ stale: false, ageMs: 14_999 });
     expect(parkingOf(s, "2026-10-27T07:00:15.001Z").stale).toBe(true);
+  });
+
+  it("staleness uses the API's receive time, not the vision machine's clock", () => {
+    const s = store();
+    // The vision PC's clock is an hour behind the API's.
+    s.upsert(at("2026-10-27T06:00:00.000Z"), ms("2026-10-27T07:00:00.000Z"));
+    expect(parkingOf(s, "2026-10-27T07:00:01.000Z")).toMatchObject({ stale: false, ageMs: 1_000 });
   });
 
   it("keeps the newer reading when an older one arrives late", () => {
     const s = store();
-    s.upsert(at("2026-10-27T07:00:05.000Z"));
-    s.upsert(at("2026-10-27T07:00:01.000Z"));
+    s.upsert(at("2026-10-27T07:00:05.000Z"), ms("2026-10-27T07:00:05.000Z"));
+    s.upsert(at("2026-10-27T07:00:01.000Z"), ms("2026-10-27T07:00:06.000Z"));
     expect(parkingOf(s, "2026-10-27T07:00:06.000Z").reading?.measuredAt).toBe("2026-10-27T07:00:05.000Z");
+  });
+
+  it("a future-dated reading does not block later readings once it is stale", () => {
+    const s = store();
+    // A vision clock 10 minutes ahead, then corrected: its next readings look "older".
+    s.upsert(at("2026-10-27T07:10:00.000Z"), ms("2026-10-27T07:00:00.000Z"));
+    s.upsert(at("2026-10-27T07:00:20.000Z"), ms("2026-10-27T07:00:20.000Z"));
+    expect(parkingOf(s, "2026-10-27T07:00:20.000Z")).toMatchObject({
+      stale: false,
+      reading: { measuredAt: "2026-10-27T07:00:20.000Z" },
+    });
   });
 });
 

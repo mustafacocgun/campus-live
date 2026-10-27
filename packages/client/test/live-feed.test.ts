@@ -14,6 +14,7 @@ const CAMERA: LiveCamera = {
   longitude: 30.33,
   reading: null,
   stale: true,
+  ageMs: null,
 };
 
 const cleanup: (() => void)[] = [];
@@ -85,4 +86,26 @@ it("applies live readings to the list", async () => {
   });
   const live = await waitFor(states, (state) => state.cameras[0]?.reading?.count === 28, 3_000);
   expect(live.cameras[0].stale).toBe(false);
+}, 15_000);
+
+it("judges staleness by when readings arrive, not by the reading's own clock", async () => {
+  const port = await freePort();
+  const io = await startApi(port);
+  const states: LiveState[] = [];
+  cleanup.push(startLiveFeed(`http://127.0.0.1:${port}`, (state) => states.push(state), 100));
+  await waitFor(states, (state) => state.connected && state.cameras.length === 1, 5_000);
+  // The vision PC's clock is an hour behind this device's.
+  io.emit(SOCKET_EVENTS.reading, {
+    cameraId: "otopark-a",
+    kind: "parking",
+    count: 28,
+    level: "medium",
+    parking: { total: 40, free: 12 },
+    source: "simulated",
+    measuredAt: new Date(Date.now() - 3_600_000).toISOString(),
+  });
+  await waitFor(states, (state) => state.cameras[0]?.reading?.count === 28, 3_000);
+  const ticked = states.length;
+  await waitFor(states, () => states.length >= ticked + 3, 3_000); // a few 100 ms ticks later
+  expect(states.at(-1)!.cameras[0].stale).toBe(false);
 }, 15_000);

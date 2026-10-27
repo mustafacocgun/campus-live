@@ -3,6 +3,7 @@
  * Works in browsers and React Native (fetch + socket.io-client), so both apps use the same logic.
  */
 import {
+  DEFAULT_STALE_AFTER_MS,
   type ApiResponse,
   type AssistantResponse,
   type CameraReading,
@@ -12,8 +13,8 @@ import {
 } from "@campus-live/contracts";
 import { io } from "socket.io-client";
 
-/** The API's default STALE_AFTER_MS: a camera silent for longer is shown grey. */
-export const STALE_AFTER_MS = 15_000;
+/** A camera silent for longer is shown grey; matches the API's default STALE_AFTER_MS. */
+export const STALE_AFTER_MS = DEFAULT_STALE_AFTER_MS;
 
 export const LEVEL_LABEL_TR: Record<Level, string> = { low: "Az", medium: "Orta", high: "Yoğun" };
 export const LEVEL_COLOR: Record<Level | "stale", string> = {
@@ -59,6 +60,9 @@ export function startLiveFeed(
 ): () => void {
   let state: LiveState = { cameras: [], connected: false, error: null };
   let stopped = false;
+  // When each camera's latest reading reached this device, by this device's clock: never compared
+  // with the vision machine's clock, which may be minutes off.
+  const receivedAt = new Map<string, number>();
   const update = (patch: Partial<LiveState>) => {
     if (stopped) return;
     state = { ...state, ...patch };
@@ -66,7 +70,12 @@ export function startLiveFeed(
   };
   const load = () =>
     fetchCameras(apiUrl)
-      .then((cameras) => update({ cameras, error: null }))
+      .then((cameras) => {
+        const now = Date.now();
+        for (const camera of cameras)
+          if (camera.ageMs !== null) receivedAt.set(camera.id, now - camera.ageMs);
+        update({ cameras, error: null });
+      })
       .catch(() => update({ error: "API'ye ulaşılamadı." }));
 
   void load();
@@ -78,12 +87,18 @@ export function startLiveFeed(
     void load();
   });
   socket.on("disconnect", () => update({ connected: false }));
-  socket.on(SOCKET_EVENTS.reading, (reading: CameraReading) =>
-    update({ cameras: mergeReading(state.cameras, reading) }),
-  );
+  socket.on(SOCKET_EVENTS.reading, (reading: CameraReading) => {
+    receivedAt.set(reading.cameraId, Date.now());
+    update({ cameras: mergeReading(state.cameras, reading) });
+  });
   const timer = setInterval(() => {
-    const now = new Date();
-    update({ cameras: state.cameras.map((camera) => ({ ...camera, stale: isStale(camera.reading, now) })) });
+    const now = Date.now();
+    update({
+      cameras: state.cameras.map((camera) => ({
+        ...camera,
+        stale: isStaleSince(receivedAt.get(camera.id) ?? null, now),
+      })),
+    });
   }, tickMs);
 
   return () => {
@@ -96,12 +111,13 @@ export function startLiveFeed(
 /** The cameras with `reading` applied to its camera, which becomes fresh; the others are untouched. */
 export function mergeReading(cameras: LiveCamera[], reading: CameraReading): LiveCamera[] {
   return cameras.map((camera) =>
-    camera.id === reading.cameraId ? { ...camera, reading, stale: false } : camera,
+    camera.id === reading.cameraId ? { ...camera, reading, stale: false, ageMs: 0 } : camera,
   );
 }
 
-export function isStale(reading: CameraReading | null, now: Date, staleAfterMs = STALE_AFTER_MS): boolean {
-  return !reading || now.getTime() - Date.parse(reading.measuredAt) > staleAfterMs;
+/** Stale when the last reading arrived more than `staleAfterMs` ago, both times by this device's clock. */
+export function isStaleSince(receivedAt: number | null, now: number, staleAfterMs = STALE_AFTER_MS): boolean {
+  return receivedAt === null || now - receivedAt > staleAfterMs;
 }
 
 /** Anything not from a real, permitted camera is labelled "Demo verisi" (CLAUDE.md §0.5). */
