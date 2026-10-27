@@ -6,6 +6,7 @@ from datetime import datetime
 from vision.analyzers.levels import level_for_count, level_for_parking
 from vision.cameras import CameraConfig
 from vision.contracts import CameraReading, ParkingState
+from vision.worker_base import WorkerBase
 
 
 class SimulatedCamera:
@@ -42,3 +43,20 @@ class SimulatedCamera:
             source="simulated",
             measured_at=now,
         )
+
+
+class SimulatedWorker(WorkerBase):
+    """Publishes a simulated reading every `interval_s`; no video, no OpenCV, no GPU."""
+
+    mode = "simulated"
+
+    def __init__(self, camera: CameraConfig, seed: int, interval_s: float = 1.0) -> None:
+        super().__init__(camera)
+        self._simulated = SimulatedCamera(camera, seed)
+        self._interval_s = interval_s
+
+    def run(self) -> None:
+        self._mark_started()
+        self._record(self._simulated.next_reading(self._now()))
+        while not self._stop.wait(self._interval_s):
+            self._record(self._simulated.next_reading(self._now()))
