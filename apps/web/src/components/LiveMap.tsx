@@ -104,11 +104,16 @@ export default function LiveMap({
       queueMicrotask(() => setProblem(`Harita açılamadı: ${reason}`));
       return;
     }
-    // Until the basemap has loaded, an error means there is no map (a missing tile later is harmless).
+    // Until the basemap has loaded once, an error means there is no map; a missing tile later is
+    // harmless. (map.loaded() is no guide: it is false whenever tiles load or the heat updates.)
+    let ready = false;
     map.on("error", (event) => {
-      if (!map.loaded()) setProblem(`Harita yüklenemedi: ${event.error?.message ?? "bilinmeyen hata"}`);
+      if (!ready) setProblem(`Harita yüklenemedi: ${event.error?.message ?? "bilinmeyen hata"}`);
     });
-    map.on("load", () => setProblem(null));
+    map.once("load", () => {
+      ready = true;
+      setProblem(null);
+    });
     map.addControl(new NavigationControl({ showCompass: false }), "top-left");
     const markZoom = () => map.getContainer().classList.toggle("map-far", map.getZoom() < NEAR_ZOOM);
     map.on("zoom", markZoom);

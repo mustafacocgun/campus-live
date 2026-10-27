@@ -25,8 +25,12 @@ export function LiveDashboard() {
   const mapBox = useRef<HTMLDivElement>(null);
   const demo = cameras.some((camera) => camera.reading && isDemo(camera.reading));
   const visible = section ? cameras.filter((camera) => camera.section === section) : cameras;
-  // The heat of the cameras on the map: a section filter applies to the cloud too.
-  const cells = useMemo(() => mergeCells(visible), [visible]);
+  // The heat of the cameras on the map: a section filter applies to the cloud too. Keyed on the
+  // inputs, not on `visible`, which is a new array on every render while a filter is on.
+  const cells = useMemo(
+    () => mergeCells(section ? cameras.filter((camera) => camera.section === section) : cameras),
+    [cameras, section],
+  );
   const selected = cameras.find((camera) => camera.id === selectedId) ?? null;
   // The wide layout always has room for a detail column, so it shows the first camera until one is picked.
   const detailed = selected ?? visible[0] ?? null;
