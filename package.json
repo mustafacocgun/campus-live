@@ -9,6 +9,16 @@
     "apps/*"
   ],
   "scripts": {
+    "build:packages": "npm run build -w @campus-live/contracts && npm run build -w @campus-live/client",
+    "dev": "npm run build:packages && concurrently -n api,vision,web -c blue,green,magenta \"npm run dev -w @campus-live/api\" \"npm run dev:vision\" \"npm run dev -w @campus-live/web\"",
+    "dev:api": "npm run build:packages && npm run dev -w @campus-live/api",
+    "dev:web": "npm run build:packages && npm run dev -w @campus-live/web",
+    "dev:vision": "cd services/vision && python -m vision",
+    "dev:mobile": "npm run build:packages && npm run start -w @campus-live/mobile",
+    "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present",
+    "test": "npm run build:packages && npm test --workspaces --if-present",
+    "lint": "npm run lint -w @campus-live/web",
+    "e2e": "npm run build:packages && node scripts/e2e-smoke.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -20,6 +30,7 @@
     "node": ">=22"
   },
   "devDependencies": {
+    "concurrently": "^10.0.6",
     "prettier": "^3.9.10"
   }
 }
