@@ -8,6 +8,7 @@ For the test-boxes detector only: automated tests, and a live check on a PC with
 """
 
 import argparse
+import math
 import random
 from pathlib import Path
 
@@ -16,35 +17,58 @@ import numpy as np
 import yaml
 
 from vision.cameras import load_cameras
+from vision.contracts import Camera
+from vision.projection import CameraPose, ground_homography
+from vision.registry import load_registry
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "configs" / "cameras.example.yaml"
 WIDTH, HEIGHT = 320, 180
-BOX = (8, 20)  # width, height of one "person"
-TOP = HEIGHT * 0.35  # feet stay in the lower part of the frame, like people on the ground
-
-Walker = tuple[float, float, float, float]  # x, feet y, and their speed in pixels per frame
 
 
-def walkers(rng: random.Random, count: int) -> list[Walker]:
-    return [
-        (
-            rng.uniform(0, WIDTH),
-            rng.uniform(TOP + BOX[1], HEIGHT - 1),
-            rng.choice((-1, 1)) * rng.uniform(1, 3),
-            rng.uniform(-0.6, 0.6),
+class Walker:
+    """Someone walking across the camera's view, in metres east and north of the camera."""
+
+    def __init__(self, rng: random.Random, pose: CameraPose) -> None:
+        self.pose = pose
+        bearing = math.radians(pose.heading + rng.uniform(-0.4, 0.4) * pose.fov_deg)
+        distance = rng.uniform(pose.near_m + 1, pose.range_m * 0.9)
+        self.east, self.north = distance * math.sin(bearing), distance * math.cos(bearing)
+        direction, speed = rng.uniform(0, 2 * math.pi), rng.uniform(0.8, 1.6)  # m/s
+        self.v_east, self.v_north = speed * math.sin(direction), speed * math.cos(direction)
+
+    def step(self, seconds: float) -> None:
+        east, north = self.east + self.v_east * seconds, self.north + self.v_north * seconds
+        if not self._in_view(east, north):  # turn back at the edge of the view
+            self.v_east, self.v_north = -self.v_east, -self.v_north
+            return
+        self.east, self.north = east, north
+
+    def _in_view(self, east: float, north: float) -> bool:
+        distance = math.hypot(east, north)
+        off = (math.degrees(math.atan2(east, north)) - self.pose.heading + 180) % 360 - 180
+        return (
+            self.pose.near_m + 0.5 < distance < self.pose.range_m * 0.95
+            and abs(off) < self.pose.fov_deg * 0.45
         )
-        for _ in range(count)
-    ]
 
 
-def write_clip(path: Path, people: list[Walker], frames: int, fps: float) -> None:
+def write_clip(path: Path, camera: Camera, people: int, frames: int, fps: float, rng: random.Random) -> None:
+    pose = CameraPose(camera.latitude, camera.longitude, camera.heading, camera.fov_deg, camera.range_m)
+    # The pose's own projection, inverted: people walk on the ground and are drawn where the camera sees them.
+    to_image = np.linalg.inv(ground_homography(pose, (WIDTH, HEIGHT)))
+    walkers = [Walker(rng, pose) for _ in range(people)]
     writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"MJPG"), fps, (WIDTH, HEIGHT))
-    for index in range(frames):
+    for _ in range(frames):
         frame = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
-        for x, y, dx, dy in people:
-            left = int((x + dx * index) % (WIDTH - BOX[0]))
-            feet = int(TOP + BOX[1] + (y - TOP - BOX[1] + dy * index) % (HEIGHT - TOP - BOX[1]))
-            frame[feet - BOX[1] : feet, left : left + BOX[0]] = 255
+        ground = np.array([[[w.east, w.north]] for w in walkers], dtype=np.float64)
+        for (x, y), walker in zip(
+            cv2.perspectiveTransform(ground, to_image).reshape(-1, 2), walkers, strict=True
+        ):
+            # Nearer people look bigger; feet at (x, y).
+            height = int(np.clip(60 * pose.near_m / math.hypot(walker.east, walker.north), 6, 40))
+            left, feet = int(x) - height // 5, min(int(y), HEIGHT - 1)
+            frame[max(0, feet - height) : feet, max(0, left) : left + max(2, height * 2 // 5)] = 255
+            walker.step(1 / fps)
         writer.write(frame)
     writer.release()
 
@@ -58,10 +82,12 @@ def main(argv: list[str] | None = None) -> None:
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     entries = []
+    registry = load_registry()
     for index, camera in enumerate(load_cameras(EXAMPLE)):
         rng = random.Random(index)
         clip = out / f"{camera.id}.avi"
-        write_clip(clip, walkers(rng, rng.randint(2, 12)), round(args.seconds * args.fps), args.fps)
+        frames = round(args.seconds * args.fps)
+        write_clip(clip, registry[camera.id], rng.randint(2, 12), frames, args.fps, rng)
         # Synthetic clips go through the estimated pose, never a dataset's calibration.
         entry = camera.model_dump(exclude_none=True, exclude={"wildtrack"})
         entries.append({**entry, "source": str(clip)})
