@@ -24,11 +24,11 @@ def where(heading: float, x: float, y: float, frame: tuple[int, int] = (100, 100
     return bearing_and_distance(lat, lng)
 
 
-# Hand-derived: the image's bottom corners land on the near arc (2 m) at heading -/+ fov/2, its top
-# corners on the far arc (40 m). The bottom centre lands mid-chord: 2 * cos(30 deg) = 1.732 m.
+# Hand-derived: the image's bottom corners land on the near arc (5 m) at heading -/+ fov/2, its top
+# corners on the far arc (40 m). The bottom centre lands mid-chord: 5 * cos(30 deg) = 4.330 m.
 def test_feet_at_bottom_centre_land_at_near_distance_along_heading() -> None:
-    assert where(0, 50, 100) == pytest.approx((0, 2 * math.cos(math.radians(30))), abs=0.01)
-    assert where(90, 50, 100) == pytest.approx((90, 2 * math.cos(math.radians(30))), abs=0.01)
+    assert where(0, 50, 100) == pytest.approx((0, 5 * math.cos(math.radians(30))), abs=0.01)
+    assert where(90, 50, 100) == pytest.approx((90, 5 * math.cos(math.radians(30))), abs=0.01)
 
 
 def test_top_centre_lands_at_range() -> None:
@@ -37,9 +37,9 @@ def test_top_centre_lands_at_range() -> None:
 
 def test_left_edge_is_heading_minus_half_fov() -> None:
     # A wide frame, so width and height cannot be swapped unnoticed.
-    assert where(0, 0, 90, frame=(160, 90)) == pytest.approx((330, 2), abs=0.01)
+    assert where(0, 0, 90, frame=(160, 90)) == pytest.approx((330, 5), abs=0.01)
     assert where(0, 0, 0, frame=(160, 90)) == pytest.approx((330, 40), abs=0.01)
-    assert where(0, 160, 90, frame=(160, 90)) == pytest.approx((30, 2), abs=0.01)
+    assert where(0, 160, 90, frame=(160, 90)) == pytest.approx((30, 5), abs=0.01)
 
 
 def test_no_boxes_project_to_nothing() -> None:

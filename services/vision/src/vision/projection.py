@@ -28,7 +28,9 @@ class CameraPose:
     heading: float  # where the camera looks, degrees clockwise from north
     fov_deg: float  # horizontal view angle
     range_m: float  # the far edge of the view
-    near_m: float = 2.0  # the near edge of the view
+    # The near edge of the view. 5 m suits a camera mounted 4-5 m up; nearer than that, the lower part
+    # of the image squeezes into the first few metres and the heat sits on the camera itself.
+    near_m: float = 5.0
 
 
 def _along(bearing: float, distance: float) -> tuple[float, float]:
