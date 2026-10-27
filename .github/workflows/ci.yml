@@ -63,6 +63,8 @@ jobs:
       - run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
       - run: pip install -e ".[dev,yolo]"
       - run: pytest tests/test_yolo_smoke.py -v
+        env:
+          VISION_REQUIRE_YOLO: "1"
 
   e2e:
     name: End-to-end smoke test

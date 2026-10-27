@@ -107,7 +107,9 @@ try {
   );
   const live = await cameras();
   console.log(`ok: ${live.length} cameras have fresh readings with density cells in the API`);
-  // The heat must land where each camera looks: a projection pointing the wrong way fails here.
+  // The heat must land where each camera looks: the service's pose wiring and map offsets are checked
+  // here. The projection's own geometry is not (the test clips are drawn through it, so a wrong
+  // homography cancels out): test_projection.py pins that with hand-derived values.
   const strays = live.flatMap((camera) =>
     camera.reading.cells
       .map((cell) => outsideCone(camera, cell))
