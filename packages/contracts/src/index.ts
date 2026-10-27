@@ -90,3 +90,16 @@ export function jsonSchemas(): Record<string, unknown> {
     "reading-batch": z.toJSONSchema(ReadingBatch),
   };
 }
+
+/** The envelope every API response uses. */
+export interface ApiSuccess<T> {
+  success: true;
+  data: T;
+}
+
+export interface ApiError {
+  success: false;
+  error: { code: string; message: string };
+}
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiError;

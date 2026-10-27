@@ -1,0 +1,37 @@
+{
+  "_note": "Demo cameras. Positions are placeholders near the Esentepe campus, NOT verified (CLAUDE.md §0.5): the team sets the real ones. Ids and kinds must match services/vision/configs.",
+  "cameras": [
+    {
+      "id": "kutuphane-giris",
+      "name": "Kütüphane girişi",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.7412,
+      "longitude": 30.3306
+    },
+    {
+      "id": "kafe-merkez",
+      "name": "Merkez kafe",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.7419,
+      "longitude": 30.3318
+    },
+    {
+      "id": "otopark-a",
+      "name": "Otopark A",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.7431,
+      "longitude": 30.3297
+    },
+    {
+      "id": "ana-yol",
+      "name": "Kampüs ana yolu",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.7405,
+      "longitude": 30.333
+    }
+  ]
+}
