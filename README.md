@@ -44,7 +44,7 @@ npm run dev                                   # api :4000 + vision :8001 (YOLO) 
 
 `npm run dev` finds `services/vision/.venv` by itself (no need to activate it in that terminal). Open
 http://localhost:3000 for the live map. For the phone app, copy `apps/mobile/.env.example` to
-`apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). Vision counts only
+`apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to this computer's LAN address and run `npm run dev:mobile` (a development build, not Expo Go: [apps/mobile/README.md](apps/mobile/README.md)). Vision counts only
 the cameras that have footage in `services/vision/configs/cameras.yaml`; the others stay grey on the map
 (set-up, WILDTRACK and test clips without a GPU: [services/vision/README.md](services/vision/README.md)).
 The assistant answers rule-based until `LLM_*` is set in `services/api/.env`.
