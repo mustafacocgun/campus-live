@@ -1,0 +1,25 @@
+{
+  "name": "campus-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Campus Live: a live campus map of crowds, parking and traffic from camera counts",
+  "workspaces": [
+    "packages/*",
+    "services/api",
+    "apps/*"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}
