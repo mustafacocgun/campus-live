@@ -74,7 +74,7 @@ The zod schemas are the single source of truth. A build step writes them as JSON
 - **Placement:** `services/api` owns the assistant, because it holds the live state.
 - **Provider:** an OpenAI-compatible `/chat/completions` call. `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` come from the API's environment only, and the key never appears in a response or a log.
 - **Grounding:** each question is sent with a compact snapshot of every camera (name, section, level, count, age, demo or not). The system prompt says to answer in Turkish, only from that data, to copy numbers exactly, and to say "Bu konuda verim yok" when the data has no answer.
-- **Fallback:** without a key, or when the provider fails or takes more than 8 s, a rule-based answer is built from the same snapshot (the named place first, then the kind of question). The demo works without any LLM.
+- **Fallback:** without a key, or when the provider fails or takes more than 8 s, a rule-based answer is built from the same snapshot (the named place first, then the kind of question; a crowd question about the whole campus gets the three busiest places). The demo works without any LLM.
 - **Rate limit:** 10 questions per minute per client.
 
 ## Privacy and data rules
