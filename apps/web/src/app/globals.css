@@ -1,25 +1,94 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light dark;
+  --background: #f4f5f8;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-2: #f1f3f7;
+  --line: #e3e6ec;
+  --muted: #64748b;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b0d12;
+    --foreground: #e6e9ef;
+    --surface: #141821;
+    --surface-2: #1c2130;
+    --line: #262d3b;
+    --muted: #8b95a7;
+    --accent: #818cf8;
+    --accent-foreground: #0b0d12;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* Leaflet ships light-only chrome; follow the page theme instead. */
+.leaflet-container {
+  background: var(--surface-2);
+  font-family: var(--font-sans);
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--surface);
+  color: var(--foreground);
+  border-color: var(--line);
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface) 85%, transparent) !important;
+  color: var(--muted);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+}
+
+.camera-label.leaflet-tooltip {
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+.camera-label.leaflet-tooltip-top::before {
+  border-top-color: var(--line);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* OpenStreetMap has no dark tiles; invert the light ones so the map sits in the page. */
+  .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.6);
+  }
 }

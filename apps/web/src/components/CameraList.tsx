@@ -4,12 +4,13 @@ import type { LiveCamera } from "@campus-live/contracts";
 /** Cameras grouped by section; the level is written out, not shown by color alone. */
 export function CameraList({ cameras }: { cameras: LiveCamera[] }) {
   const sections = [...new Set(cameras.map((camera) => camera.section))];
+  if (!cameras.length) return <p className="text-sm text-muted">Kameralar yükleniyor…</p>;
   return (
     <div className="space-y-4">
       {sections.map((section) => (
         <section key={section}>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase">{section}</h3>
-          <ul className="mt-1 space-y-1">
+          <h3 className="text-xs font-semibold tracking-wider text-muted uppercase">{section}</h3>
+          <ul className="mt-1.5 space-y-1.5">
             {cameras
               .filter((camera) => camera.section === section)
               .map((camera) => {
@@ -18,27 +19,33 @@ export function CameraList({ cameras }: { cameras: LiveCamera[] }) {
                 return (
                   <li
                     key={camera.id}
-                    className="flex items-center justify-between gap-2 rounded border px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-3 py-2.5"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex min-w-0 items-center gap-2.5">
                       <span
-                        className="inline-block h-3 w-3 rounded-full"
-                        style={{ backgroundColor: color }}
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: color, boxShadow: `0 0 0 4px ${color}33` }}
                       />
-                      {camera.name}
+                      <span className="truncate font-medium">{camera.name}</span>
                     </span>
-                    <span className="text-sm text-right">
-                      {reading ? (
-                        <>
-                          {valueText(reading)} · <strong>{LEVEL_LABEL_TR[reading.level]}</strong>
-                          {isDemo(reading) && (
-                            <span className="ml-2 rounded bg-gray-100 px-1 text-xs">Demo</span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-gray-500">Güncel veri yok</span>
-                      )}
-                    </span>
+                    {reading ? (
+                      <span className="flex shrink-0 items-center gap-2 text-sm">
+                        <span className="font-semibold tabular-nums">{valueText(reading)}</span>
+                        <span
+                          className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                          style={{ color, backgroundColor: `${color}26` }}
+                        >
+                          {LEVEL_LABEL_TR[reading.level]}
+                        </span>
+                        {isDemo(reading) && (
+                          <span className="rounded-md border border-line px-1.5 py-px text-[10px] font-medium tracking-wide text-muted uppercase">
+                            Demo
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-sm text-muted">Güncel veri yok</span>
+                    )}
                   </li>
                 );
               })}
