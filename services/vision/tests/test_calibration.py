@@ -53,7 +53,7 @@ def test_cone_covers_the_ground_in_view() -> None:
     proj = projection(rotation, t)
     cone = [metres_from_anchor(*point) for point in proj.cone((1920, 1080))]
     bottom = [metres_from_anchor(*point) for point in proj.project(np.array([[0.0, 1080], [1920, 1080]]))]
-    assert cone[:2] == pytest.approx(bottom, abs=0.01)
+    np.testing.assert_allclose(cone[:2], bottom, atol=0.01)  # pairs: pytest.approx takes flat data only
     # The top corners look above the horizon: cut at max_range_m from the camera (0, -15 m).
     for east, north in cone[2:]:
         assert math.hypot(east, north + 15) == pytest.approx(proj.max_range_m, abs=0.01)
