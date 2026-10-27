@@ -37,6 +37,9 @@ error type) on `127.0.0.1:8001`, and pushes readings to the API.
 ## Count from video
 
 1. Put the clip in `videos/` (git-ignored) and record its source and license in `docs/data-sources.md`.
+   A dataset that ships numbered frames instead of video (such as WILDTRACK's `00000000.png`,
+   `00000005.png`, ...) becomes a clip with
+   `python -m vision.frames <frames-folder> videos/<name>.avi --fps <the frames' rate>`.
 2. `cp configs/cameras.example.yaml configs/cameras.yaml` (git-ignored) and set `source` for the camera:
    a file path, or a webcam index such as `0`.
 3. `VISION_DETECTOR=yolo VISION_CAMERAS_FILE=configs/cameras.yaml python -m vision`
