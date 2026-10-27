@@ -20,7 +20,9 @@ Override everything. If asked to break one, say so and ask again.
    `EXPO_PUBLIC_*` variable** — those ship to every browser and phone.
 2. **Camera frames never leave the vision service and are never stored.** Only `CameraReading`s
    (numbers) leave it, and the apps show numbers and colors. No face recognition, no
-   re-identification, no saved snapshots — not even for debugging. (KVKK)
+   re-identification, no saved snapshots — not even for debugging. (KVKK) **Camera positions
+   never leave the server either:** the public API, socket events and the apps carry places and the
+   merged heat only, never a camera id, position, direction or per-camera cells.
 3. **Footage is licensed or our own.** Licensed footage gets a line in `docs/data-sources.md`
    (source, license, what it shows) before it is used; our own recordings show only people who
    agreed. **Never a real university camera** without the university's written permission. Web
@@ -96,12 +98,15 @@ decisions that are the team's · never claim an improvement you did not measure.
 
 ## §3 Vision standards
 
-1. **The pipeline:** frame → detector (YOLO11n) → people's feet projected onto the map (camera pose or
-   dataset calibration) → analyzer (crowd | parking | traffic) → `CameraReading` (count + 3 m density
-   cells) → `POST /internal/readings`. Nothing else leaves the vision service: cells are aggregates,
-   never identities, tracks or per-person positions.
+1. **The pipeline:** frame → detector (YOLO11n) → analyzer → `CameraReading` → `POST
+/internal/readings`. Outdoor crowd: people's feet projected onto the map (camera pose or dataset
+   calibration), count + 3 m density cells. Indoor crowd: count only. Parking: vehicles against the
+   outlined slots, free/total. Traffic: vehicles in the road zone. Nothing else leaves the vision
+   service: cells are aggregates, never identities, tracks or per-person positions.
 2. **Cameras are keyed by id.** Every camera in `services/vision/configs/` exists in the shared
-   registry `config/cameras.json` with the same kind and a pose; a test checks this.
+   registry `config/cameras.json` with the same kind, and feeds a place in `config/places.json`; a
+   test checks this. Indoor cameras go only where people study, eat or work: never where they live or
+   sleep, never in toilets.
 3. **Counts are estimates.** They are smoothed (median of the last 5 samples), labelled demo, and
    marked stale after 15 s without a reading (grey on the map).
 4. **Live YOLO is the only data source in the app** (each teammate runs vision on a GPU PC with the
@@ -117,8 +122,8 @@ decisions that are the team's · never claim an improvement you did not measure.
 
 ## §4 AI and demo judgement
 
-1. **Demo scope:** the live map on web and mobile — crowd first, then parking, then traffic — and the
-   assistant. Everything else is out of scope unless the team adds it here.
+1. **Demo scope:** the live map on web and mobile by place — crowd first, then parking, then traffic
+   — and the assistant. Everything else is out of scope unless the team adds it here.
 2. **Prefer an honest "Demo verisi" label to a live-looking fake.**
 3. **Working once is not working on stage.** Every live dependency — camera, LLM API, network — has a
    fallback: a camera without a stream turns grey ("Görüntü yok") instead of showing made-up
