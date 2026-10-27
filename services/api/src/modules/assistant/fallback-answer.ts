@@ -23,8 +23,9 @@ const TOPIC: Record<CameraKind, string> = { parking: "otopark", crowd: "kalabal�
 // Campus places a question may name. When no camera matches the place, there is no data: never
 // another place's numbers.
 const PLACE_WORDS = /yemekhane|kantin|spor|salon|havuz|fakulte|derslik|amfi|laboratuvar|yurt|rektorluk/;
-// Words in camera names too generic to identify a place ("Kampüs ana yolu" is not "the campus").
-const GENERIC_WORDS = new Set(["kampus"]);
+// Words in camera names too generic to identify a place ("Kampüs ana yolu" is not "the campus",
+// "Öğrenciler" are not "Öğrenci Yemekhanesi").
+const GENERIC_WORDS = new Set(["kampus", "ogrenci"]);
 // A crowd question about the whole campus gets the busiest few places, not a line per camera.
 const BUSIEST = 3;
 
@@ -55,11 +56,16 @@ function isNamed(camera: LiveCamera, questionWords: string[]): boolean {
   );
 }
 
-/** The fresh crowd cameras with the most people, busiest first. */
+/**
+ * The fresh crowd cameras with the most people, busiest first, one per section: cameras of a section
+ * can watch the same crowd (the plaza's 7 views), which must not fill the list as several places.
+ */
 function busiest(cameras: LiveCamera[]): LiveCamera[] {
+  const sections = new Set<string>();
   return cameras
     .filter((camera) => camera.kind === "crowd" && !camera.stale && camera.reading)
     .sort((a, b) => (b.reading?.count ?? 0) - (a.reading?.count ?? 0))
+    .filter((camera) => !sections.has(camera.section) && sections.add(camera.section))
     .slice(0, BUSIEST);
 }
 

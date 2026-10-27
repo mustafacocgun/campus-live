@@ -222,6 +222,24 @@ describe("fallback on the campus map", () => {
     expect(answer).not.toMatch(/\d+ kişi/);
   });
 
+  it("never lists views of one crowd as several busy places", () => {
+    // The plaza's views see the same people: one of them stands for the plaza in the busiest list.
+    const plaza = [
+      crowdCamera("kutuphane-meydani-1", "Kütüphane meydanı 1", "Kütüphane meydanı", 20),
+      crowdCamera("kutuphane-meydani-2", "Kütüphane meydanı 2", "Kütüphane meydanı", 19),
+      crowdCamera("kutuphane-meydani-3", "Kütüphane meydanı 3", "Kütüphane meydanı", 18),
+    ];
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", [...plaza, ...campus], NOW);
+    expect(answer).toContain("Kütüphane meydanı 1: 20 kişi");
+    expect(answer).not.toContain("Kütüphane meydanı 2");
+    expect(answer).toContain("Taş Kafe: 11 kişi"); // the next busiest places still make the list
+  });
+
+  it("does not take students for the student dining hall", () => {
+    const answer = fallbackAnswer("Öğrenciler en çok nerede kalabalık?", campus, NOW);
+    expect(answer.split("\n")[0]).toBe("Canlı verilere göre en kalabalık yerler:");
+  });
+
   it("finds a place named with or without a suffix", () => {
     const faculty = fallbackAnswer("Fakülte kalabalık mı?", campus, NOW);
     expect(faculty).toContain("Bilişim Fakültesi: 6 kişi");
