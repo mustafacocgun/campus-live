@@ -41,6 +41,20 @@ time, error type) on `127.0.0.1:8001`.
 | `VISION_CAMERAS_FILE`       | `configs/cameras.example.yaml` | Camera config (the example runs nothing)      |
 | `VISION_PUBLISH_INTERVAL_S` | `0.5`                          | Seconds between pushes                        |
 
+## Add a camera
+
+1. **Footage:** put the clip in `videos/` (git-ignored) and give it a line in `docs/data-sources.md`
+   (source, license, what it shows) before using it (CLAUDE.md §0.3). Prefer a fixed, elevated view.
+2. **On the map:** add the camera to `config/cameras.json` at the repo root: `id`, `name`, `section`,
+   `kind` (`crowd`), where it stands (`latitude`, `longitude`) and where it looks: `heading` (degrees
+   clockwise from north), `fovDeg` (the view's width in degrees) and `rangeM` (how far it sees). Until
+   the team confirms a spot, it is a placeholder (§0.5). Restart the API after editing it.
+3. **Processing:** add the id to `configs/cameras.example.yaml` with its thresholds, and to your
+   `configs/cameras.yaml` with `source: videos/<clip>`.
+4. **Check:** `pytest tests/test_registry_ids.py tests/test_cameras.py`, then run vision and open the
+   map: the camera's heat should sit inside its cone. If people land in the wrong place, adjust
+   `heading`, `fovDeg` or `rangeM`.
+
 ## Where people land on the map
 
 - **Most cameras:** the camera's pose in `config/cameras.json` (position, `heading`, `fovDeg`,

@@ -58,4 +58,7 @@ The assistant answers rule-based until `LLM_*` is set in `services/api/.env`.
 | `npm run e2e`                     | Real API + vision on synthetic test clips: fresh readings and an answer |
 | `node scripts/assistant-eval.mjs` | 5 real Turkish questions next to the live data (run with the LLM key)   |
 
+To add a camera (its clip and license line, its spot and direction on the map, its source), follow
+[services/vision/README.md](services/vision/README.md#add-a-camera).
+
 Working rules for this repo (people and coding assistants alike): [CLAUDE.md](CLAUDE.md).
