@@ -4,7 +4,8 @@ Express 5 + TypeScript. Holds the camera registry and the latest reading per cam
 from the vision service, and pushes them to web and mobile over Socket.IO.
 
 ```bash
-cp .env.example .env            # set VISION_INGEST_TOKEN (the vision service uses the same value)
+cp .env.example .env            # set VISION_INGEST_TOKEN (the vision service uses the same value);
+                                # the placeholder is refused: the root README prints a random one
 npm run dev -w @campus-live/api # http://localhost:4000, on every interface so phones can reach it
 npm test -w @campus-live/api
 ```

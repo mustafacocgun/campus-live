@@ -1,6 +1,6 @@
-import { askAssistant } from "@campus-live/client";
+import { apiUrlProblem, askAssistant } from "@campus-live/client";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { API_URL } from "@/constants/api";
@@ -16,10 +16,12 @@ export default function AssistantScreen() {
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
+  // Same check as the Harita tab: without it a question here silently did nothing (#12).
+  const problem = apiUrlProblem(API_URL, Platform.OS);
 
   async function submit() {
     const asked = question.trim();
-    if (!asked || busy || !API_URL) return;
+    if (!asked || busy || problem) return;
     setBusy(true);
     setQuestion("");
     try {
@@ -39,6 +41,7 @@ export default function AssistantScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <Text style={styles.title}>Asistana sor</Text>
+      {problem && <Text style={styles.error}>{problem}</Text>}
       <FlatList
         data={turns}
         keyExtractor={(_, index) => String(index)}
@@ -63,8 +66,8 @@ export default function AssistantScreen() {
         />
         <Pressable
           onPress={submit}
-          disabled={busy}
-          style={[styles.button, busy && styles.busy]}
+          disabled={busy || !!problem}
+          style={[styles.button, (busy || !!problem) && styles.busy]}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>{busy ? "…" : "Sor"}</Text>
@@ -81,6 +84,14 @@ const styles = StyleSheet.create({
   turn: { gap: 2 },
   question: { fontWeight: "600" },
   note: { fontSize: 12, color: "#9ca3af" },
+  error: {
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: "#fef2f2",
+    color: "#b91c1c",
+  },
   form: { flexDirection: "row", gap: 8, padding: 12 },
   input: {
     flex: 1,

@@ -40,7 +40,8 @@ class Publisher:
                 headers=self._headers,
                 timeout=self._timeout_s,
             )
-        except httpx.HTTPError as exc:
+        # Not just httpx.HTTPError: a malformed VISION_API_URL raises InvalidURL or UnicodeError (#9).
+        except Exception as exc:
             logger.warning("could not reach the API: %s", type(exc).__name__)
             return False
         if response.status_code >= 300:
@@ -53,4 +54,8 @@ class Publisher:
 
     def run(self, interval_s: float, stop: threading.Event) -> None:
         while not stop.wait(interval_s):
-            self.publish_once(datetime.now().astimezone())
+            # One bad round must not end the thread: /status would still look healthy while nothing is sent.
+            try:
+                self.publish_once(datetime.now().astimezone())
+            except Exception:
+                logger.exception("publishing failed; retrying next round")

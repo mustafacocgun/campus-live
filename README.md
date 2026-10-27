@@ -32,6 +32,7 @@ leave the vision service; the apps get numbers only. Design: [docs/architecture.
 npm install                                   # Node 22; one install for every workspace
 cp services/api/.env.example services/api/.env
 cp services/vision/.env.example services/vision/.env   # the same VISION_INGEST_TOKEN in both files
+node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"   # paste as VISION_INGEST_TOKEN in both; the API refuses the placeholder
 cp apps/web/.env.example apps/web/.env.local
 
 cd services/vision && python -m venv .venv
@@ -42,8 +43,8 @@ npm run dev                                   # api :4000 + simulated vision + w
 ```
 
 `npm run dev` finds `services/vision/.venv` by itself (no need to activate it in that terminal). Open
-http://localhost:3000 for the live map. For the phone app, set `EXPO_PUBLIC_API_URL` in
-`apps/mobile/.env` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). To count from
+http://localhost:3000 for the live map. For the phone app, copy `apps/mobile/.env.example` to
+`apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). To count from
 real video with YOLO on a GPU, see [services/vision/README.md](services/vision/README.md). The assistant
 answers rule-based until `LLM_*` is set in `services/api/.env`.
 

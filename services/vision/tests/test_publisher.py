@@ -64,3 +64,35 @@ def test_publisher_skips_when_nothing_new(api) -> None:
     publisher.publish_once(NOW)
     publisher.publish_once(NOW)
     assert len(api.received) == 1
+
+
+def test_publisher_survives_malformed_api_url() -> None:
+    # httpx raises InvalidURL here, which is not an httpx.HTTPError (#9).
+    publisher = Publisher("http://localhost:abc", "test-token-1234567890", [_worker(READING)])
+    assert publisher.publish_once(NOW) is False
+
+
+def test_publisher_loop_survives_a_failing_round(api) -> None:
+    calls = 0
+
+    def latest(now):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("worker broke once")
+        return READING
+
+    stop = threading.Event()
+    thread = threading.Thread(
+        target=Publisher(api.url, "test-token-1234567890", [SimpleNamespace(latest=latest)]).run,
+        args=(0.01, stop),
+        daemon=True,
+    )
+    thread.start()
+    for _ in range(200):
+        if api.received:
+            break
+        threading.Event().wait(0.01)
+    stop.set()
+    thread.join(timeout=1)
+    assert len(api.received) == 1

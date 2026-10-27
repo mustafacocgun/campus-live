@@ -24,23 +24,39 @@ export const LEVEL_COLOR: Record<Level | "stale", string> = {
   stale: "#9ca3af",
 };
 
-async function unwrap<T>(response: Response): Promise<T> {
-  const body = (await response.json()) as ApiResponse<T>;
+/**
+ * One API call, unwrapped. Every failure is a Turkish message the apps can show as it is: never a
+ * raw "Failed to fetch" or a JSON parse error from a proxy's HTML page.
+ */
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(url, init);
+  } catch {
+    throw new Error("API'ye ulaşılamadı.");
+  }
+  const unexpected = new Error(`API beklenmeyen bir yanıt verdi (HTTP ${response.status}).`);
+  if (!response.headers.get("content-type")?.includes("application/json")) throw unexpected;
+  let body: ApiResponse<T>;
+  try {
+    body = (await response.json()) as ApiResponse<T>;
+  } catch {
+    throw unexpected;
+  }
   if (!body.success) throw new Error(body.error.message);
   return body.data;
 }
 
 export async function fetchCameras(apiUrl: string): Promise<LiveCamera[]> {
-  return unwrap<LiveCamera[]>(await fetch(`${apiUrl}/api/cameras`));
+  return request<LiveCamera[]>(`${apiUrl}/api/cameras`);
 }
 
 export async function askAssistant(apiUrl: string, message: string): Promise<AssistantResponse> {
-  const response = await fetch(`${apiUrl}/api/assistant/chat`, {
+  return request<AssistantResponse>(`${apiUrl}/api/assistant/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ message }),
   });
-  return unwrap<AssistantResponse>(response);
 }
 
 export interface LiveState {
