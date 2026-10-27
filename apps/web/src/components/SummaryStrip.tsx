@@ -1,52 +1,53 @@
-import { isDemo, LEVEL_COLOR } from "@campus-live/client";
-import type { CameraKind, CameraReading, Level, LiveCamera } from "@campus-live/contracts";
+import { LEVEL_COLOR, PLACE_TOPIC, type PlaceView } from "@campus-live/client";
+import type { CameraKind, Level } from "@campus-live/contracts";
 import type { ReactNode } from "react";
 import { inkOn } from "@/lib/ink";
 import { DemoBadge, LevelChip } from "./badges";
-import { CameraIcon, KIND_LABEL_TR, KindIcon } from "./icons";
+import { KIND_LABEL_TR, KindIcon, PlaceIcon } from "./icons";
 
-const KINDS: CameraKind[] = ["crowd", "parking", "traffic"];
+const TOPICS: CameraKind[] = ["crowd", "parking", "traffic"];
 const LEVEL_ORDER: Level[] = ["low", "medium", "high"];
 const UNIT: Record<CameraKind, string> = { crowd: "kişi", parking: "boş", traffic: "araç" };
 
-/** Fresh readings only: a stale camera is left out of every sum, not guessed. */
-function freshReadings(cameras: LiveCamera[]): { camera: LiveCamera; reading: CameraReading }[] {
-  return cameras.flatMap((camera) =>
-    !camera.stale && camera.reading ? [{ camera, reading: camera.reading }] : [],
+type Fresh = PlaceView & { level: Level; count: number };
+
+/** Fresh places only: a stale place is left out of every sum, not guessed. */
+function freshPlaces(places: PlaceView[]): Fresh[] {
+  return places.filter(
+    (place): place is Fresh => !place.stale && place.level !== null && place.count !== null,
   );
 }
 
-/** One tile per camera kind, plus the busiest crowd spot. */
-export function SummaryStrip({ cameras }: { cameras: LiveCamera[] }) {
-  const kinds = KINDS.filter((kind) => cameras.some((camera) => camera.kind === kind));
-  if (!kinds.length) return null;
-  const fresh = freshReadings(cameras);
+/**
+ * One tile per kind of place, plus the busiest crowd place. Sums go over places, never cameras: an
+ * area's overlapping views already count once in its place (docs/architecture.md).
+ */
+export function SummaryStrip({ places }: { places: PlaceView[] }) {
+  const topics = TOPICS.filter((topic) => places.some((place) => PLACE_TOPIC[place.kind] === topic));
+  if (!topics.length) return null;
+  const fresh = freshPlaces(places);
   const busiest = fresh
-    .filter(({ camera }) => camera.kind === "crowd")
-    .sort(
-      (a, b) =>
-        LEVEL_ORDER.indexOf(b.reading.level) - LEVEL_ORDER.indexOf(a.reading.level) ||
-        b.reading.count - a.reading.count,
-    )[0];
+    .filter((place) => PLACE_TOPIC[place.kind] === "crowd")
+    .sort((a, b) => LEVEL_ORDER.indexOf(b.level) - LEVEL_ORDER.indexOf(a.level) || b.count - a.count)[0];
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-      {kinds.map((kind) => (
-        <KindTile
-          key={kind}
-          kind={kind}
-          readings={fresh.filter(({ camera }) => camera.kind === kind).map(({ reading }) => reading)}
+      {topics.map((topic) => (
+        <TopicTile
+          key={topic}
+          topic={topic}
+          places={fresh.filter((place) => PLACE_TOPIC[place.kind] === topic)}
         />
       ))}
       {busiest && (
         <Tile
-          color={LEVEL_COLOR[busiest.reading.level]}
-          icon={<CameraIcon camera={busiest.camera} className="size-4.5" />}
+          color={LEVEL_COLOR[busiest.level]}
+          icon={<PlaceIcon place={busiest} className="size-4.5" />}
           label="En kalabalık"
         >
-          <Figure value={busiest.reading.count} unit="kişi" level={busiest.reading.level} />
+          <Figure value={busiest.count} unit="kişi" level={busiest.level} />
           <p className="mt-1.5 flex items-center gap-1.5 truncate text-[11px] text-muted">
-            {busiest.camera.name}
-            {isDemo(busiest.reading) && <DemoBadge />}
+            {busiest.name}
+            {busiest.demo && <DemoBadge />}
           </p>
         </Tile>
       )}
@@ -54,24 +55,24 @@ export function SummaryStrip({ cameras }: { cameras: LiveCamera[] }) {
   );
 }
 
-function KindTile({ kind, readings }: { kind: CameraKind; readings: CameraReading[] }) {
-  const worst = readings.length
-    ? LEVEL_ORDER[Math.max(...readings.map((reading) => LEVEL_ORDER.indexOf(reading.level)))]
+function TopicTile({ topic, places }: { topic: CameraKind; places: Fresh[] }) {
+  const worst = places.length
+    ? LEVEL_ORDER[Math.max(...places.map((place) => LEVEL_ORDER.indexOf(place.level)))]
     : null;
-  const count = readings.reduce((sum, reading) => sum + reading.count, 0);
-  const free = readings.reduce((sum, reading) => sum + (reading.parking?.free ?? 0), 0);
-  const total = readings.reduce((sum, reading) => sum + (reading.parking?.total ?? 0), 0);
+  const count = places.reduce((sum, place) => sum + place.count, 0);
+  const free = places.reduce((sum, place) => sum + (place.parking?.free ?? 0), 0);
+  const total = places.reduce((sum, place) => sum + (place.parking?.total ?? 0), 0);
   const color = worst ? LEVEL_COLOR[worst] : LEVEL_COLOR.stale;
   return (
-    <Tile color={color} icon={<KindIcon kind={kind} className="size-4.5" />} label={KIND_LABEL_TR[kind]}>
+    <Tile color={color} icon={<KindIcon kind={topic} className="size-4.5" />} label={KIND_LABEL_TR[topic]}>
       {worst ? (
         <>
-          <Figure value={kind === "parking" ? `${free}/${total}` : count} unit={UNIT[kind]} level={worst} />
+          <Figure value={topic === "parking" ? `${free}/${total}` : count} unit={UNIT[topic]} level={worst} />
           <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted">
-            {readings.length > 1 && `${readings.length} noktanın en yoğunu`}
-            {readings.some(isDemo) && <DemoBadge />}
+            {places.length > 1 && `${places.length} yerin en yoğunu`}
+            {places.some((place) => place.demo) && <DemoBadge />}
           </p>
-          {kind === "parking" && total > 0 && (
+          {topic === "parking" && total > 0 && (
             <div className="absolute inset-x-0 bottom-0 h-1" style={{ backgroundColor: `${color}33` }}>
               <div
                 className="h-full transition-[width] duration-700"

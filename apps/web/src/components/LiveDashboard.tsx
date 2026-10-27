@@ -1,14 +1,15 @@
 "use client";
 
-import { isDemo, LEVEL_COLOR, LEVEL_LABEL_TR, mergeCells } from "@campus-live/client";
+import { LEVEL_COLOR, LEVEL_LABEL_TR, PLACE_TOPIC } from "@campus-live/client";
+import type { CameraKind } from "@campus-live/contracts";
 import dynamic from "next/dynamic";
-import { useMemo, useRef, useState } from "react";
-import { useLiveCameras } from "@/lib/use-live-cameras";
+import { useRef, useState } from "react";
+import { useLivePlaces } from "@/lib/use-live-places";
 import { AssistantPanel } from "./AssistantPanel";
-import { CameraDetail } from "./CameraDetail";
-import { CameraList } from "./CameraList";
 import { FilterChips } from "./FilterChips";
 import { LogoMark } from "./icons";
+import { PlaceDetail } from "./PlaceDetail";
+import { PlaceList } from "./PlaceList";
 import { SummaryStrip } from "./SummaryStrip";
 
 // MapLibre draws with the browser's WebGL, so the map is never rendered on the server.
@@ -19,21 +20,27 @@ const HEAT_RAMP =
   "linear-gradient(to right, rgba(37,99,235,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
 
 export function LiveDashboard() {
-  const { cameras, connected, error, history } = useLiveCameras();
+  const { campus, places, cells, connected, error, history } = useLivePlaces();
+  const [topic, setTopic] = useState<CameraKind | null>(null);
   const [section, setSection] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapBox = useRef<HTMLDivElement>(null);
-  const demo = cameras.some((camera) => camera.reading && isDemo(camera.reading));
-  const visible = section ? cameras.filter((camera) => camera.section === section) : cameras;
-  // The heat of the cameras on the map: a section filter applies to the cloud too. Keyed on the
-  // inputs, not on `visible`, which is a new array on every render while a filter is on.
-  const cells = useMemo(
-    () => mergeCells(section ? cameras.filter((camera) => camera.section === section) : cameras),
-    [cameras, section],
+  const demo = places.some((place) => !place.stale && place.demo);
+  const visible = places.filter(
+    (place) => (!topic || PLACE_TOPIC[place.kind] === topic) && (!section || place.section === section),
   );
-  const selected = cameras.find((camera) => camera.id === selectedId) ?? null;
-  // The wide layout always has room for a detail column, so it shows the first camera until one is picked.
+  // The heat belongs to the crowd. The API merges it for the whole campus, so a section filter
+  // leaves it whole: its cells carry no place.
+  const heat = topic === null || topic === "crowd" ? cells : [];
+  const selected = places.find((place) => place.id === selectedId) ?? null;
+  // The wide layout always has room for a detail column, so it shows the first place until one is picked.
   const detailed = selected ?? visible[0] ?? null;
+
+  function chooseTopic(next: CameraKind | null) {
+    setTopic(next);
+    setSection(null);
+    if (next && selected && PLACE_TOPIC[selected.kind] !== next) setSelectedId(null);
+  }
 
   function chooseSection(next: string | null) {
     setSection(next);
@@ -95,19 +102,26 @@ export function LiveDashboard() {
           Demo görüntüsü: kameralar kampüs kamerası değil, demo videolarıdır; sayılar tahminidir.
         </p>
       )}
-      <FilterChips cameras={cameras} value={section} onChange={chooseSection} />
-      {/* grid-cols-1, not the implicit auto column: a long camera row would widen it past a phone screen. */}
+      <FilterChips
+        places={places}
+        topic={topic}
+        section={section}
+        onTopic={chooseTopic}
+        onSection={chooseSection}
+      />
+      {/* grid-cols-1, not the implicit auto column: a long place row would widen it past a phone screen. */}
       <div className="grid grid-cols-1 gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_400px_320px]">
-        {/* The summary sits over the map column only, so the camera list keeps the full height. */}
+        {/* The summary sits over the map column only, so the place list keeps the full height. */}
         <div className="flex flex-col gap-4 lg:min-h-0">
-          <SummaryStrip cameras={cameras} />
+          <SummaryStrip places={places} />
           <div
             ref={mapBox}
             className="relative h-[60vh] scroll-mt-4 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm lg:h-auto lg:min-h-0 lg:flex-1"
           >
             <LiveMap
-              cameras={visible}
-              cells={cells}
+              campus={campus}
+              places={visible}
+              cells={heat}
               selectedId={selected?.id ?? null}
               onSelect={setSelectedId}
             />
@@ -137,8 +151,8 @@ export function LiveDashboard() {
             {/* Narrower screens have no detail column: the detail opens over the map until closed. */}
             {selected && (
               <div className="absolute top-3 right-3 z-1000 max-h-[calc(100%-1.5rem)] w-80 max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-2xl border border-line bg-surface/95 p-4 shadow-2xl backdrop-blur 2xl:hidden">
-                <CameraDetail
-                  camera={selected}
+                <PlaceDetail
+                  place={selected}
                   history={history[selected.id] ?? []}
                   onClose={() => setSelectedId(null)}
                 />
@@ -151,10 +165,10 @@ export function LiveDashboard() {
             <h2 className="mb-3 flex items-baseline justify-between font-semibold">
               Canlı durum
               {visible.length > 0 && (
-                <span className="text-xs font-medium text-muted">{visible.length} kamera</span>
+                <span className="text-xs font-medium text-muted">{visible.length} yer</span>
               )}
             </h2>
-            <CameraList cameras={visible} selectedId={selected?.id ?? null} onSelect={selectFromList} />
+            <PlaceList places={visible} selectedId={selected?.id ?? null} onSelect={selectFromList} />
           </section>
           <section className="flex flex-col rounded-2xl border border-line bg-surface p-4 shadow-sm lg:min-h-[280px] lg:flex-1">
             <AssistantPanel />
@@ -162,9 +176,9 @@ export function LiveDashboard() {
         </aside>
         <section className="hidden rounded-2xl border border-line bg-surface p-4 shadow-sm 2xl:block 2xl:min-h-0 2xl:overflow-y-auto">
           {detailed ? (
-            <CameraDetail camera={detailed} history={history[detailed.id] ?? []} />
+            <PlaceDetail place={detailed} history={history[detailed.id] ?? []} />
           ) : (
-            <p className="text-sm text-muted">Kameralar yükleniyor…</p>
+            <p className="text-sm text-muted">Yerler yükleniyor…</p>
           )}
         </section>
       </div>

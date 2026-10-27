@@ -3,51 +3,20 @@
  * Works in browsers and React Native (fetch + socket.io-client), so both apps use the same logic.
  */
 import {
-  DEFAULT_STALE_AFTER_MS,
-  type ApiResponse,
   type AssistantResponse,
   type Camera,
   type CameraReading,
   type DensityCell,
-  type Level,
   type LiveCamera,
   SOCKET_EVENTS,
 } from "@campus-live/contracts";
 import { io } from "socket.io-client";
+import { isStaleSince, LEVEL_COLOR } from "./common.js";
+import { request } from "./request.js";
 
-/** A camera silent for longer is shown grey; matches the API's default STALE_AFTER_MS. */
-export const STALE_AFTER_MS = DEFAULT_STALE_AFTER_MS;
-
-export const LEVEL_LABEL_TR: Record<Level, string> = { low: "Az", medium: "Orta", high: "Yoğun" };
-export const LEVEL_COLOR: Record<Level | "stale", string> = {
-  low: "#16a34a",
-  medium: "#f59e0b",
-  high: "#dc2626",
-  stale: "#9ca3af",
-};
-
-/**
- * One API call, unwrapped. Every failure is a Turkish message the apps can show as it is: never a
- * raw "Failed to fetch" or a JSON parse error from a proxy's HTML page.
- */
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(url, init);
-  } catch {
-    throw new Error("API'ye ulaşılamadı.");
-  }
-  const unexpected = new Error(`API beklenmeyen bir yanıt verdi (HTTP ${response.status}).`);
-  if (!response.headers.get("content-type")?.includes("application/json")) throw unexpected;
-  let body: ApiResponse<T>;
-  try {
-    body = (await response.json()) as ApiResponse<T>;
-  } catch {
-    throw unexpected;
-  }
-  if (!body.success) throw new Error(body.error.message);
-  return body.data;
-}
+export * from "./common.js";
+export * from "./dark-style.js";
+export * from "./places.js";
 
 export async function fetchCameras(apiUrl: string): Promise<LiveCamera[]> {
   return request<LiveCamera[]>(`${apiUrl}/api/cameras`);
@@ -137,11 +106,6 @@ export function mergeReading(cameras: LiveCamera[], reading: CameraReading): Liv
   return cameras.map((camera) =>
     camera.id === reading.cameraId ? { ...camera, reading, stale: false, ageMs: 0 } : camera,
   );
-}
-
-/** Stale when the last reading arrived more than `staleAfterMs` ago, both times by this device's clock. */
-export function isStaleSince(receivedAt: number | null, now: number, staleAfterMs = STALE_AFTER_MS): boolean {
-  return receivedAt === null || now - receivedAt > staleAfterMs;
 }
 
 // Metres per degree of latitude; a degree of longitude is this times cos(latitude). The vision service
