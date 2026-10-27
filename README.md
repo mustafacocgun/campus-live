@@ -26,6 +26,33 @@ leave the vision service; the apps get numbers only. Design: [docs/architecture.
 - Python 3.12 (vision service)
 - A GPU machine for real YOLO counting; everything else runs anywhere in simulated mode
 
-Setup and run commands are in the "Getting started" section, added with the dev scripts.
+## Getting started
+
+```bash
+npm install                                   # Node 22; one install for every workspace
+cp services/api/.env.example services/api/.env
+cp services/vision/.env.example services/vision/.env   # the same VISION_INGEST_TOKEN in both files
+cp apps/web/.env.example apps/web/.env.local
+
+cd services/vision && python -m venv .venv
+.venv\Scripts\activate                         # Windows (macOS/Linux: source .venv/bin/activate)
+pip install -e ".[dev]" && cd ../..
+
+npm run dev                                   # api :4000 + simulated vision + web :3000, all live
+```
+
+Open http://localhost:3000 for the live map. For the phone app, set `EXPO_PUBLIC_API_URL` in
+`apps/mobile/.env` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). To count from
+real video with YOLO on a GPU, see [services/vision/README.md](services/vision/README.md). The assistant
+answers rule-based until `LLM_*` is set in `services/api/.env`.
+
+| Command                           | What it does                                                            |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`                     | API, simulated vision and web together                                  |
+| `npm run dev:mobile`              | The Expo app                                                            |
+| `npm run typecheck`               | Every TypeScript workspace                                              |
+| `npm test`                        | contracts, client and API tests (vision: `pytest` in `services/vision`) |
+| `npm run e2e`                     | Real API + simulated vision: fresh readings and a grounded answer       |
+| `node scripts/assistant-eval.mjs` | 5 real Turkish questions next to the live data (run with the LLM key)   |
 
 Working rules for this repo (people and coding assistants alike): [CLAUDE.md](CLAUDE.md).
