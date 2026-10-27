@@ -25,6 +25,9 @@ __pycache__/
 # Vision data: videos and model weights are never committed (CLAUDE.md §0.3)
 services/vision/videos/
 services/vision/datasets/
+
+# MapLibre's worker, copied from node_modules before dev and build
+apps/web/public/maplibre-gl-worker.mjs
 services/vision/configs/cameras.yaml
 services/vision/models/*
 !services/vision/models/.gitkeep

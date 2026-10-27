@@ -12,7 +12,7 @@ leave the vision service; the apps get numbers only. Design: [docs/architecture.
 
 | Folder                                     | Stack                             | Purpose                                           |
 | ------------------------------------------ | --------------------------------- | ------------------------------------------------- |
-| [`apps/web`](apps/web)                     | Next.js 16, react-leaflet         | Live map and assistant in the browser             |
+| [`apps/web`](apps/web)                     | Next.js 16, MapLibre GL           | Live heat map and assistant in the browser        |
 | [`apps/mobile`](apps/mobile)               | Expo SDK 58 (React Native)        | Live map and assistant on phones                  |
 | [`services/api`](services/api)             | Node 22, Express 5, Socket.IO     | Camera registry, live state, assistant            |
 | [`services/vision`](services/vision)       | Python 3.12, YOLO11n, supervision | Camera workers: video in, readings out            |

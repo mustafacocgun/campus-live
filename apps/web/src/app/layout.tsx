@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Overpass } from "next/font/google";
-import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 // Self-hosted at build time: browsers never ask Google for it. latin-ext carries ş, ğ, ı and İ.

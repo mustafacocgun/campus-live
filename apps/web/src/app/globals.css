@@ -56,22 +56,70 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Leaflet ships light-only chrome; follow the page theme instead. */
-.leaflet-container {
-  background: var(--surface-2);
+/* MapLibre's controls follow the page theme. Its stylesheet loads after this one, so every rule
+   starts with .maplibregl-map to win. The map itself switches to a real dark style: a CSS filter on
+   it would invert the heat colors too. */
+.maplibregl-map {
   font-family: var(--font-sans);
 }
 
-.leaflet-bar a,
-.leaflet-bar a:hover {
+.maplibregl-map .maplibregl-ctrl-group {
   background: var(--surface);
-  color: var(--foreground);
-  border-color: var(--line);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
 }
 
-.leaflet-control-attribution {
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  border-top-color: var(--line);
+}
+
+/* Its compact and expanded states set their own white backgrounds, more specific than this. */
+.maplibregl-map .maplibregl-ctrl-attrib {
   background: color-mix(in srgb, var(--surface) 85%, transparent) !important;
+  color: var(--muted) !important;
+}
+
+.maplibregl-map .maplibregl-ctrl-attrib a {
   color: var(--muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* MapLibre's control icons are dark drawings: lighten the icons only, never the map. */
+  .maplibregl-map .maplibregl-ctrl-icon,
+  .maplibregl-map .maplibregl-ctrl-attrib-button {
+    filter: invert(1);
+  }
+}
+
+/* A camera on the map (LiveMap's marker): a button holding the pin, with the camera's name above. */
+.camera-marker {
+  display: block;
+  width: 40px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* Zoomed out (LiveMap adds .map-far): smaller pins and no names, so they do not cover the heat. */
+.map-far .camera-marker {
+  width: 26px;
+  height: 34px;
+}
+
+.map-far .camera-pin {
+  zoom: 0.65;
+}
+
+.map-far .camera-label {
+  display: none;
+}
+
+.camera-marker:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 /* Camera pins (LiveMap's divIcon): the fill is the level, the icon the place, the tip the position. */
@@ -148,28 +196,19 @@ body {
   }
 }
 
-.camera-label.leaflet-tooltip {
+.camera-label {
+  position: absolute;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   background: var(--surface);
   color: var(--foreground);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
-}
-
-.camera-label.leaflet-tooltip-top::before {
-  border-top-color: var(--line);
-}
-
-/* Muted base map in light mode so the level colors stand out. */
-.leaflet-tile-pane {
-  filter: saturate(0.55) contrast(0.95) brightness(1.03);
-}
-
-@media (prefers-color-scheme: dark) {
-  /* OpenStreetMap has no dark tiles; invert the light ones so the map sits in the page. */
-  .leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.6);
-  }
+  pointer-events: none;
 }

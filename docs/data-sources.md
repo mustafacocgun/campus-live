@@ -28,6 +28,14 @@ downloading the dataset:
 - **Not verified:** whether the world's Z axis points up or down (the projection handles both) and the
   exact frame file names. Whoever downloads the zip checks these and corrects this list.
 
+## Map tiles
+
+| Service                                                    | Used by     | Terms                                                                                                                                                                                                                                                                                                                                                                | Checked    |
+| ---------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| OpenFreeMap public instance (styles `positron` and `dark`) | the web map | "completely free: there are no limits on the number of map views or requests. There's no registration, no user database, no API keys, and no cookies."; "Is commercial usage allowed? Yes."; "Attribution is required. If you are using MapLibre, they are automatically added" [EVIDENCED, openfreemap.org]; terms of service: provided "as-is," with no warranties | 2026-10-27 |
+
+Map data © OpenStreetMap contributors (ODbL), shown in the map's attribution.
+
 ## Candidates for the other camera spots (license checked 2026-10-27, per clip at download)
 
 Grades: [EVIDENCED] read on the source's own page · [WEAK] second-hand or partly unreadable.

@@ -204,6 +204,60 @@ export function lerpCells(from: DensityCell[], to: DensityCell[], t: number): De
   return cells;
 }
 
+// GeoJSON for the map layers, shaped for MapLibre on the web and on phones alike.
+type Feature<G, P> = { type: "Feature"; geometry: G; properties: P };
+type Collection<G, P> = { type: "FeatureCollection"; features: Feature<G, P>[] };
+type Point = { type: "Point"; coordinates: [number, number] };
+type Polygon = { type: "Polygon"; coordinates: [number, number][][] };
+
+/** A camera's color: its level's, or grey without a fresh reading. */
+function stateColor(camera: LiveCamera): string {
+  return !camera.stale && camera.reading ? LEVEL_COLOR[camera.reading.level] : LEVEL_COLOR.stale;
+}
+
+/** The heat layer's points: one per cell, weighted by its people. */
+export function heatGeoJSON(cells: DensityCell[]): Collection<Point, { weight: number }> {
+  return {
+    type: "FeatureCollection",
+    features: cells.map((cell) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [cell.lng, cell.lat] },
+      properties: { weight: cell.weight },
+    })),
+  };
+}
+
+/** One dot per camera, in its level's color; `stale` ones are grey. */
+export function camerasGeoJSON(
+  cameras: LiveCamera[],
+): Collection<Point, { id: string; name: string; color: string; stale: boolean }> {
+  return {
+    type: "FeatureCollection",
+    features: cameras.map((camera) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [camera.longitude, camera.latitude] },
+      properties: {
+        id: camera.id,
+        name: camera.name,
+        color: stateColor(camera),
+        stale: camera.stale || !camera.reading,
+      },
+    })),
+  };
+}
+
+/** Each camera's view cone, colored like its dot: where its numbers come from. */
+export function conesGeoJSON(cameras: LiveCamera[]): Collection<Polygon, { id: string; color: string }> {
+  return {
+    type: "FeatureCollection",
+    features: cameras.map((camera) => ({
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [cameraCone(camera)] },
+      properties: { id: camera.id, color: stateColor(camera) },
+    })),
+  };
+}
+
 /** Anything not from a real, permitted camera is labelled "Demo verisi" (CLAUDE.md §0.5). */
 export function isDemo(reading: CameraReading): boolean {
   return reading.source !== "camera";

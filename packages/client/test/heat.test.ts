@@ -1,6 +1,14 @@
 import type { DensityCell, LiveCamera } from "@campus-live/contracts";
 import { describe, expect, it } from "vitest";
-import { cameraCone, lerpCells, mergeCells } from "../src/index.js";
+import {
+  cameraCone,
+  camerasGeoJSON,
+  conesGeoJSON,
+  heatGeoJSON,
+  LEVEL_COLOR,
+  lerpCells,
+  mergeCells,
+} from "../src/index.js";
 
 const M_PER_DEG = 111_320;
 
@@ -92,5 +100,33 @@ describe("lerpCells", () => {
   it("fades vanishing cells out and drops them at the end", () => {
     expect(lerpCells([cell(40.7421, 2)], [], 0.5)).toEqual([cell(40.7421, 1)]);
     expect(lerpCells([cell(40.7421, 2)], [], 1)).toEqual([]);
+  });
+});
+
+describe("map layers", () => {
+  it("turns cells into weighted points", () => {
+    expect(heatGeoJSON([{ lat: 40.7421, lng: 30.3321, weight: 2 }])).toEqual({
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [30.3321, 40.7421] },
+          properties: { weight: 2 },
+        },
+      ],
+    });
+  });
+
+  it("draws each camera in its level's color, grey without a fresh reading", () => {
+    const [live, silent] = camerasGeoJSON([camera("a", []), camera("b", [], true)]).features;
+    expect(live.geometry.coordinates).toEqual([30.332, 40.742]);
+    expect(live.properties).toEqual({ id: "a", name: "a", color: LEVEL_COLOR.low, stale: false });
+    expect(silent.properties).toMatchObject({ color: LEVEL_COLOR.stale, stale: true });
+  });
+
+  it("gives every camera its cone, colored like its dot", () => {
+    const [cone] = conesGeoJSON([camera("a", [])]).features;
+    expect(cone.geometry).toEqual({ type: "Polygon", coordinates: [cameraCone(camera("a", []))] });
+    expect(cone.properties).toEqual({ id: "a", color: LEVEL_COLOR.low });
   });
 });
