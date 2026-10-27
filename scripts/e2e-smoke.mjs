@@ -1,6 +1,6 @@
 // End-to-end smoke test: the real API and the real vision service (simulated mode) on spare ports.
 // Passes when every camera has a fresh reading in the API and the assistant quotes the live parking
-// numbers. Needs `npm run build:packages` and the vision package installed in $PYTHON (default python3).
+// numbers. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
 //
 //   node scripts/e2e-smoke.mjs
 
@@ -8,9 +8,13 @@ import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { pickPython } from "./run-vision.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const python = process.env.PYTHON ?? (process.platform === "win32" ? "python" : "python3");
+// The vision venv's Python, else $PYTHON, else the system Python.
+const python =
+  pickPython(path.join(root, "services", "vision"), process.platform, process.env) ??
+  (process.platform === "win32" ? "python" : "python3");
 const token = randomBytes(24).toString("base64url");
 const API = "http://127.0.0.1:4100";
 

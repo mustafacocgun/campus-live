@@ -41,7 +41,8 @@ pip install -e ".[dev]" && cd ../..
 npm run dev                                   # api :4000 + simulated vision + web :3000, all live
 ```
 
-Open http://localhost:3000 for the live map. For the phone app, set `EXPO_PUBLIC_API_URL` in
+`npm run dev` finds `services/vision/.venv` by itself (no need to activate it in that terminal). Open
+http://localhost:3000 for the live map. For the phone app, set `EXPO_PUBLIC_API_URL` in
 `apps/mobile/.env` to this computer's LAN address and run `npm run dev:mobile` (Expo Go). To count from
 real video with YOLO on a GPU, see [services/vision/README.md](services/vision/README.md). The assistant
 answers rule-based until `LLM_*` is set in `services/api/.env`.
