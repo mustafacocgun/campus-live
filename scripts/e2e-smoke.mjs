@@ -100,13 +100,27 @@ try {
       VISION_PORT: "8101",
     }),
   );
+  // Every camera reports; outdoor crowd cameras also say where people are (indoor ones count only).
+  const outdoorCrowd = (camera) => camera.kind === "crowd" && !camera.indoor;
   await until(
-    async () => (await cameras()).every((camera) => !camera.stale && camera.reading.cells?.length),
-    30_000,
-    "fresh readings with density cells for every camera",
+    async () =>
+      (await cameras()).every(
+        (camera) => !camera.stale && (!outdoorCrowd(camera) || camera.reading.cells?.length),
+      ),
+    60_000,
+    "fresh readings from every camera, with density cells outdoors",
   );
-  const live = await cameras();
-  console.log(`ok: ${live.length} cameras have fresh readings with density cells in the API`);
+  const all = await cameras();
+  const live = all.filter(outdoorCrowd);
+  console.log(
+    `ok: ${all.length} cameras have fresh readings; ${live.length} outdoor ones send density cells`,
+  );
+  const lots = all.filter((camera) => camera.kind === "parking");
+  if (!lots.every((camera) => camera.reading.parking?.total > 0))
+    throw new Error("a parking camera has no slots");
+  if (all.some((camera) => camera.indoor && camera.reading.cells))
+    throw new Error("an indoor camera sent cells");
+  console.log(`ok: ${lots.length} parking cameras report free/total; indoor cameras send counts only`);
   // The heat must land where each camera looks: the service's pose wiring and map offsets are checked
   // here. The projection's own geometry is not (the test clips are drawn through it, so a wrong
   // homography cancels out): test_projection.py pins that with hand-derived values.

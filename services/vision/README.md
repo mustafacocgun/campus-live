@@ -41,6 +41,13 @@ time, error type) on `127.0.0.1:8001`.
 | `VISION_CAMERAS_FILE`       | `configs/cameras.example.yaml` | Camera config (the example runs nothing)      |
 | `VISION_PUBLISH_INTERVAL_S` | `0.5`                          | Seconds between pushes                        |
 
+## Places and cameras on the campus
+
+`config/places.json` (what users see) and the indoor, parking and traffic cameras in
+`config/cameras.json` come from OpenStreetMap through `tools/build_campus.py` (its docstring says how to
+refresh them); hand-placed outdoor cameras are kept. Nothing on SUBÜ's buildings or lots, and no indoor
+camera where people live or sleep.
+
 ## Add a camera
 
 1. **Footage:** put the clip in `videos/` (git-ignored) and give it a line in `docs/data-sources.md`
