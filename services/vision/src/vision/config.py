@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     ingest_token: str = ""
     # The example file works out of the box in simulated mode; real sources go in configs/cameras.yaml.
     cameras_file: str = "configs/cameras.example.yaml"
-    detector: Literal["simulated", "yolo"] = "simulated"
+    detector: Literal["simulated", "yolo", "replay"] = "simulated"
+    # Written by `python -m vision.record`, played by VISION_DETECTOR=replay.
+    replay_file: str = "recordings/demo.jsonl"
     publish_interval_s: float = 2.0
     port: int = 8001
