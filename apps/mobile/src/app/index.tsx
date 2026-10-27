@@ -26,6 +26,18 @@ export default function MapScreen() {
       </View>
       {problem && <Text style={[styles.banner, styles.error]}>{problem}</Text>}
       {!problem && error && <Text style={[styles.banner, styles.error]}>{error}</Text>}
+      <View style={styles.legend}>
+        {(["low", "medium", "high"] as const).map((level) => (
+          <View key={level} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: LEVEL_COLOR[level] }]} />
+            <Text style={styles.legendText}>{LEVEL_LABEL_TR[level]}</Text>
+          </View>
+        ))}
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: LEVEL_COLOR.stale }]} />
+          <Text style={styles.legendText}>Veri yok</Text>
+        </View>
+      </View>
       {demo && (
         <Text style={styles.banner}>Demo verisi: kameralar demo videolarıdır ve sayılar tahminidir.</Text>
       )}
@@ -39,14 +51,17 @@ export default function MapScreen() {
             const value = reading
               ? `${valueText(reading)} · ${LEVEL_LABEL_TR[reading.level]}`
               : "Güncel veri yok";
+            const color = reading ? LEVEL_COLOR[reading.level] : LEVEL_COLOR.stale;
             return (
               <Marker
                 key={`${camera.id}-${reading?.level ?? "stale"}`}
                 coordinate={{ latitude: camera.latitude, longitude: camera.longitude }}
-                pinColor={reading ? LEVEL_COLOR[reading.level] : LEVEL_COLOR.stale}
                 title={camera.name}
                 description={reading && isDemo(reading) ? `${value} · Demo verisi` : value}
-              />
+              >
+                {/* A drawn dot, not pinColor: Android pins keep only the hue, so grey became blue (#2). */}
+                <View style={[styles.dot, { backgroundColor: color }]} />
+              </Marker>
             );
           })}
         </MapView>
@@ -72,5 +87,10 @@ const styles = StyleSheet.create({
   },
   error: { backgroundColor: "#fef2f2", color: "#b91c1c" },
   map: { flex: 1 },
+  dot: { width: 26, height: 26, borderRadius: 13, borderWidth: 3, borderColor: "#ffffff" },
+  legend: { flexDirection: "row", gap: 12, paddingHorizontal: 12, paddingBottom: 8 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendText: { fontSize: 13 },
   empty: { padding: 24, textAlign: "center", color: "#6b7280" },
 });

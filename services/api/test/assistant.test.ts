@@ -20,11 +20,30 @@ const cameras: LiveCamera[] = [
     latitude: 40.7412,
     longitude: 30.3306,
     stale: false,
+    ageMs: 4_000,
     reading: {
       cameraId: "kutuphane-giris",
       kind: "crowd",
       count: 23,
       level: "medium",
+      source: "simulated",
+      measuredAt: FOUR_SECONDS_AGO,
+    },
+  },
+  {
+    id: "kafe-merkez",
+    name: "Merkez kafe",
+    section: "Kafeler",
+    kind: "crowd",
+    latitude: 40.7419,
+    longitude: 30.3318,
+    stale: false,
+    ageMs: 4_000,
+    reading: {
+      cameraId: "kafe-merkez",
+      kind: "crowd",
+      count: 7,
+      level: "low",
       source: "simulated",
       measuredAt: FOUR_SECONDS_AGO,
     },
@@ -37,6 +56,7 @@ const cameras: LiveCamera[] = [
     latitude: 40.7431,
     longitude: 30.3297,
     stale: false,
+    ageMs: 4_000,
     reading: reading({ measuredAt: FOUR_SECONDS_AGO }),
   },
   {
@@ -47,6 +67,7 @@ const cameras: LiveCamera[] = [
     latitude: 40.7405,
     longitude: 30.333,
     stale: true,
+    ageMs: 3_600_000,
     reading: {
       cameraId: "ana-yol",
       kind: "traffic",
@@ -102,6 +123,27 @@ describe("live context and fallback", () => {
     const answer = fallbackAnswer("Otoparkta boş yer var mı?", full, NOW);
     expect(answer).toContain("Otopark A: boş yer yok (40 yerin hepsi dolu)");
     expect(answer).not.toContain("0 boş yer var");
+  });
+
+  it("answers the place the question names, before the kind of question", () => {
+    const cafe = fallbackAnswer("Kafede boş yer var mı?", cameras, NOW);
+    expect(cafe).toContain("Merkez kafe: 7 kişi");
+    expect(cafe).not.toContain("Otopark A");
+    const library = fallbackAnswer("Kütüphanede boş yer var mı?", cameras, NOW);
+    expect(library).toContain("Kütüphane girişi: 23 kişi");
+    expect(library).not.toContain("Otopark A");
+  });
+
+  it("answers only the named camera of a kind", () => {
+    const answer = fallbackAnswer("Kafe kalabalık mı?", cameras, NOW);
+    expect(answer).toContain("Merkez kafe");
+    expect(answer).not.toContain("Kütüphane girişi");
+  });
+
+  it("says it has no data for a place without a camera", () => {
+    const answer = fallbackAnswer("Yemekhane kalabalık mı?", cameras, NOW);
+    expect(answer).toContain("Bu konuda verim yok");
+    expect(answer).not.toContain("23 kişi");
   });
 
   it("fallback quotes the live numbers", () => {
