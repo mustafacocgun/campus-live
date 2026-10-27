@@ -42,17 +42,53 @@ export async function askAssistant(apiUrl: string, message: string): Promise<Ass
   return unwrap<AssistantResponse>(response);
 }
 
-/** Calls `onReading` for every live reading; returns a function that disconnects. */
-export function connectLive(
+export interface LiveState {
+  cameras: LiveCamera[];
+  connected: boolean;
+  error: string | null;
+}
+
+/**
+ * The live camera list for an app: the first load over REST, then readings over Socket.IO, and a
+ * tick that turns silent cameras grey. Calls `onChange` with each new state; returns a stop function.
+ */
+export function startLiveFeed(
   apiUrl: string,
-  onReading: (reading: CameraReading) => void,
-  onConnection?: (connected: boolean) => void,
+  onChange: (state: LiveState) => void,
+  tickMs = 5_000,
 ): () => void {
+  let state: LiveState = { cameras: [], connected: false, error: null };
+  let stopped = false;
+  const update = (patch: Partial<LiveState>) => {
+    if (stopped) return;
+    state = { ...state, ...patch };
+    onChange(state);
+  };
+  const load = () =>
+    fetchCameras(apiUrl)
+      .then((cameras) => update({ cameras, error: null }))
+      .catch(() => update({ error: "API'ye ulaşılamadı." }));
+
+  void load();
   const socket = io(apiUrl, { transports: ["websocket"] });
-  socket.on(SOCKET_EVENTS.reading, onReading);
-  socket.on("connect", () => onConnection?.(true));
-  socket.on("disconnect", () => onConnection?.(false));
+  socket.on("connect", () => {
+    update({ connected: true });
+    // Every (re)connect re-syncs the list: if the first load failed because the API was not up yet,
+    // readings for unknown cameras would otherwise be dropped and the map would stay empty.
+    void load();
+  });
+  socket.on("disconnect", () => update({ connected: false }));
+  socket.on(SOCKET_EVENTS.reading, (reading: CameraReading) =>
+    update({ cameras: mergeReading(state.cameras, reading) }),
+  );
+  const timer = setInterval(() => {
+    const now = new Date();
+    update({ cameras: state.cameras.map((camera) => ({ ...camera, stale: isStale(camera.reading, now) })) });
+  }, tickMs);
+
   return () => {
+    stopped = true;
+    clearInterval(timer);
     socket.close();
   };
 }
