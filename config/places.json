@@ -96,7 +96,7 @@
       }
     },
     {
-      "id": "kutuphane-bati",
+      "id": "kutuphane-bati-alani",
       "name": "Kütüphane batı",
       "section": "Kütüphane",
       "kind": "area",
@@ -106,7 +106,7 @@
       }
     },
     {
-      "id": "kutuphane-yolu",
+      "id": "kutuphane-yolu-alani",
       "name": "Kütüphane yolu",
       "section": "Kütüphane",
       "kind": "area",
@@ -156,7 +156,7 @@
       }
     },
     {
-      "id": "yemekhane-yolu",
+      "id": "yemekhane-yolu-alani",
       "name": "Yemekhane yolu",
       "section": "Yemekhane",
       "kind": "area",
@@ -319,7 +319,7 @@
       }
     },
     {
-      "id": "kantin",
+      "id": "kantin-binasi",
       "name": "Kantin",
       "section": "Kafeler",
       "kind": "building",
@@ -1042,7 +1042,7 @@
       }
     },
     {
-      "id": "tas-kafe",
+      "id": "tas-kafe-binasi",
       "name": "Taş Kafe",
       "section": "Kafeler",
       "kind": "building",

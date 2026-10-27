@@ -43,3 +43,9 @@ def test_every_camera_feeds_a_place_of_its_kind_inside_the_campus() -> None:
             assert _inside((camera.longitude, camera.latitude), place["geometry"]["coordinates"][0]), (
                 camera.id
             )
+
+
+def test_no_place_has_a_camera_id() -> None:
+    # Place ids are served to everyone and camera ids to no one (CLAUDE.md §0.2).
+    places = json.loads((REGISTRY_FILE.parent / "places.json").read_text(encoding="utf-8"))
+    assert not {place["id"] for place in places["places"]} & set(load_registry())

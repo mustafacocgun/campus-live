@@ -193,8 +193,13 @@ def build(osm: dict, outdoor: list[dict]) -> tuple[dict, list[dict]]:
     if outline[0] != outline[-1]:
         outline.append(outline[0])
     places, cameras, used = [], [], set()
+    # Place ids are served to everyone and camera ids to no one (CLAUDE.md §0.2).
+    camera_ids = {cam["id"] for cam in outdoor}
 
-    def unique(base: str) -> str:
+    def unique(base: str, word: str = "") -> str:
+        """`base`, or `base-<word>` when a hand-placed camera has that id; `-2`, `-3`… when a place has it."""
+        if word and base in camera_ids:
+            base = f"{base}-{word}"
         candidate, n = base, 2
         while candidate in used:
             candidate, n = f"{base}-{n}", n + 1
@@ -216,7 +221,7 @@ def build(osm: dict, outdoor: list[dict]) -> tuple[dict, list[dict]]:
         # "Taş Kafe" -> "Taş Kafe önü"; names that already say where ("Kütüphane yolu") stay.
         keep = ("yolu", "meydanı", "önü", "batı", "doğu", "kuzey", "güney")
         area_name = name if len(members) > 1 or name.endswith(keep) else f"{name} önü"
-        place_id = unique(slug(area_name))
+        place_id = unique(slug(area_name), "alani")
         views = [xy(c["latitude"], c["longitude"]) for c in members]
         centres = [
             (
@@ -245,7 +250,7 @@ def build(osm: dict, outdoor: list[dict]) -> tuple[dict, list[dict]]:
         if any(word in raw for word in EXCLUDE) or not inside(centroid(footprint), outline):
             continue
         name = display_name(raw)
-        place_id = unique(slug(name))
+        place_id = unique(slug(name), "binasi")
         section = section_for(name)
         places.append(
             {
@@ -355,6 +360,8 @@ def build(osm: dict, outdoor: list[dict]) -> tuple[dict, list[dict]]:
                 )
             )
 
+    if clash := {p["id"] for p in places} & {c["id"] for c in cameras}:
+        raise ValueError(f"place ids equal to camera ids: {sorted(clash)}")
     campus = {
         "name": "Sakarya Üniversitesi",
         "geometry": {"type": "Polygon", "coordinates": [lnglat(outline)]},

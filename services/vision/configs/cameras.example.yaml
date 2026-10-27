@@ -107,7 +107,7 @@ cameras:
     kind: crowd
     thresholds: { medium: 15, high: 40 }
 
-  - id: kantin-ic-1
+  - id: kantin-binasi-ic-1
     kind: crowd
     thresholds: { medium: 15, high: 40 }
 
@@ -207,7 +207,7 @@ cameras:
     kind: crowd
     thresholds: { medium: 15, high: 40 }
 
-  - id: tas-kafe-ic-1
+  - id: tas-kafe-binasi-ic-1
     kind: crowd
     thresholds: { medium: 15, high: 40 }
 

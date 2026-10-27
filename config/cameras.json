@@ -95,7 +95,7 @@
       "heading": 212,
       "fovDeg": 70,
       "rangeM": 35,
-      "place": "kutuphane-bati"
+      "place": "kutuphane-bati-alani"
     },
     {
       "id": "kutuphane-yolu",
@@ -107,7 +107,7 @@
       "heading": 175,
       "fovDeg": 60,
       "rangeM": 40,
-      "place": "kutuphane-yolu"
+      "place": "kutuphane-yolu-alani"
     },
     {
       "id": "merkez-kantin",
@@ -167,7 +167,7 @@
       "heading": 356,
       "fovDeg": 60,
       "rangeM": 28,
-      "place": "yemekhane-yolu"
+      "place": "yemekhane-yolu-alani"
     },
     {
       "id": "muhendislik",
@@ -295,7 +295,7 @@
       "indoor": true
     },
     {
-      "id": "kantin-ic-1",
+      "id": "kantin-binasi-ic-1",
       "name": "Kantin iç 1",
       "section": "Kafeler",
       "kind": "crowd",
@@ -304,7 +304,7 @@
       "heading": 54.1,
       "fovDeg": 90,
       "rangeM": 15,
-      "place": "kantin",
+      "place": "kantin-binasi",
       "indoor": true
     },
     {
@@ -620,7 +620,7 @@
       "indoor": true
     },
     {
-      "id": "tas-kafe-ic-1",
+      "id": "tas-kafe-binasi-ic-1",
       "name": "Taş Kafe iç 1",
       "section": "Kafeler",
       "kind": "crowd",
@@ -629,7 +629,7 @@
       "heading": 170.0,
       "fovDeg": 90,
       "rangeM": 15,
-      "place": "tas-kafe",
+      "place": "tas-kafe-binasi",
       "indoor": true
     },
     {

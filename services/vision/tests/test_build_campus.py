@@ -3,6 +3,7 @@ import math
 import subprocess
 import sys
 
+import pytest
 import yaml
 
 from conftest import VISION_DIR
@@ -59,7 +60,7 @@ def campus_osm() -> dict:
     }
 
 
-def build(tmp_path):
+def build(tmp_path, extra: tuple[dict, ...] = ()):
     osm = tmp_path / "campus.json"
     osm.write_text(json.dumps(campus_osm()))
     registry = tmp_path / "cameras.json"
@@ -74,7 +75,9 @@ def build(tmp_path):
         "fovDeg": 70,
         "rangeM": 30,
     }
-    registry.write_text(json.dumps({"cameras": [outdoor]}))
+    # A hand-placed camera whose id is the slug of a building's name.
+    facing = outdoor | {"id": "test-fakultesi", "name": "Test Fakültesi", "latitude": at(-20, 10)["lat"]}
+    registry.write_text(json.dumps({"cameras": [outdoor, facing, *extra]}))
     example = tmp_path / "example.yaml"
     example.write_text("cameras:\n  - {id: test-onu, kind: crowd, thresholds: {medium: 8, high: 20}}\n")
     places, cameras_out, example_out = (
@@ -149,3 +152,29 @@ def test_every_camera_feeds_a_place_of_its_kind_inside_the_campus(tmp_path) -> N
     assert {c["kind"] for c in cameras} == {"crowd", "parking", "traffic"}
     assert [c.id for c in load_cameras(example)] == [c["id"] for c in cameras]
     assert yaml.safe_load(example.read_text())  # loads as YAML
+
+
+def test_a_place_never_takes_a_camera_id(tmp_path) -> None:
+    # Place ids are served to everyone and camera ids to no one (CLAUDE.md §0.2).
+    places, cameras, _ = build(tmp_path)
+    assert not {place["id"] for place in places["places"]} & {camera["id"] for camera in cameras}
+    ids = {place["name"]: place["id"] for place in places["places"]}
+    assert ids["Test önü"] == "test-onu-alani"
+    assert ids["Test Fakültesi"] == "test-fakultesi-binasi"
+
+
+def test_the_build_stops_when_a_lot_would_take_a_camera_id(tmp_path) -> None:
+    lot = {
+        "id": "test-fakultesi-otoparki",
+        "name": "Otopark girişi",
+        "section": "Otoparklar",
+        "kind": "crowd",
+        "latitude": at(-15, -45)["lat"],
+        "longitude": at(-15, -45)["lon"],
+        "heading": 0,
+        "fovDeg": 70,
+        "rangeM": 30,
+    }
+    with pytest.raises(subprocess.CalledProcessError) as failed:
+        build(tmp_path, (lot,))
+    assert b"place ids equal to camera ids: ['test-fakultesi-otoparki']" in failed.value.stderr
