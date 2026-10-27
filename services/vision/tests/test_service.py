@@ -1,10 +1,11 @@
+import json
 import time
 
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from conftest import synthetic_camera, synthetic_pixels, write_clip, write_wildtrack
+from conftest import NOW, synthetic_camera, synthetic_pixels, write_clip, write_wildtrack
 from vision.cameras import CameraConfig, load_cameras
 from vision.config import Settings
 from vision.registry import load_registry
@@ -101,3 +102,62 @@ def test_test_clips_are_labelled_simulated_and_footage_demo(tmp_path) -> None:
     [boxes] = build_workers(Settings(_env_file=None, detector="test-boxes"), cameras, registry)
     [yolo] = build_workers(Settings(_env_file=None, detector="yolo"), cameras, registry)
     assert (boxes.source_kind, yolo.source_kind) == ("simulated", "demo-footage")
+
+
+def _registered(camera_id: str, kind: str, place: str, indoor: bool = False) -> dict:
+    return {
+        "id": camera_id,
+        "name": camera_id,
+        "section": "s",
+        "kind": kind,
+        "latitude": 40.742,
+        "longitude": 30.332,
+        "heading": 0,
+        "fovDeg": 60,
+        "rangeM": 30,
+        "place": place,
+        "indoor": indoor,
+    }
+
+
+def test_each_kind_of_camera_gets_its_analyzer_and_classes(tmp_path) -> None:
+    registry_file = tmp_path / "registry.json"
+    registry_file.write_text(
+        json.dumps(
+            {
+                "cameras": [
+                    _registered("meydan", "crowd", "meydan"),
+                    _registered("muh-ic", "crowd", "muhendislik", indoor=True),
+                    _registered("otopark-1", "parking", "otopark-1"),
+                    _registered("yol-1", "traffic", "kampus-ici-yolu"),
+                ]
+            }
+        )
+    )
+    config = tmp_path / "cameras.yaml"
+    config.write_text(
+        "cameras:\n"
+        f"  - {{id: meydan, kind: crowd, source: a.avi, {THRESHOLDS}}}\n"
+        f"  - {{id: muh-ic, kind: crowd, source: a.avi, {THRESHOLDS}}}\n"
+        "  - {id: otopark-1, kind: parking, source: a.avi,"
+        " slots: [[[0.1, 0.5], [0.4, 0.5], [0.4, 0.9], [0.1, 0.9]]]}\n"
+        f"  - {{id: yol-1, kind: traffic, source: a.avi, {THRESHOLDS}}}\n"
+    )
+    workers = build_workers(
+        Settings(_env_file=None, detector="test-boxes"), load_cameras(config), load_registry(registry_file)
+    )
+    frame = np.zeros((100, 100, 3), dtype=np.uint8)
+    frame[50:90, 10:20] = 255  # a person
+    frame[55:85, 60:90] = (0, 220, 255)  # a car
+    seen, readings = {}, {}
+    for worker in workers:
+        detections = worker.detector_factory()(frame)
+        seen[worker.camera.id] = detections.class_id.tolist()
+        readings[worker.camera.id] = worker.analyzer_factory().update(
+            detections, (100, 100), NOW, "simulated"
+        )
+    assert seen == {"meydan": [0], "muh-ic": [0], "otopark-1": [2], "yol-1": [2]}
+    assert readings["meydan"].cells  # outdoors: where people are
+    assert readings["muh-ic"].cells is None  # indoors: counts only
+    assert (readings["otopark-1"].kind, readings["otopark-1"].parking.total) == ("parking", 1)
+    assert (readings["yol-1"].kind, readings["yol-1"].count) == ("traffic", 1)

@@ -11,11 +11,13 @@ from typing import Any
 from fastapi import FastAPI
 
 from vision.analyzers.crowd import CrowdAnalyzer, FeetProjector
+from vision.analyzers.parking import ParkingAnalyzer
+from vision.analyzers.traffic import TrafficAnalyzer
 from vision.calibration import WILDTRACK_FRAME, CalibratedProjection, MapAnchor, load_wildtrack_calibration
 from vision.cameras import CameraConfig, load_cameras
 from vision.config import Settings
 from vision.contracts import Camera
-from vision.detector import PERSON, YoloDetector, detect_test_boxes
+from vision.detector import PARKED, PERSON, VEHICLES, TestBoxesDetector, YoloDetector
 from vision.projection import CameraPose, PoseProjector
 from vision.publisher import Publisher
 from vision.registry import load_registry
@@ -41,8 +43,17 @@ def projector_for(camera: CameraConfig, registered: Camera) -> FeetProjector:
     return PoseProjector(pose)
 
 
-def _crowd_analyzer(camera: CameraConfig, registered: Camera) -> CrowdAnalyzer:
-    return CrowdAnalyzer(camera, projector_for(camera, registered))
+# What each kind of camera looks for (COCO classes).
+CLASSES = {"crowd": PERSON, "parking": PARKED, "traffic": VEHICLES}
+
+
+def make_analyzer(camera: CameraConfig, registered: Camera) -> CrowdAnalyzer | ParkingAnalyzer:
+    """The analyzer for this camera's kind; indoor crowd cameras count without positions."""
+    if camera.kind == "parking":
+        return ParkingAnalyzer(camera)
+    if camera.kind == "traffic":
+        return TrafficAnalyzer(camera)
+    return CrowdAnalyzer(camera, None if registered.indoor else projector_for(camera, registered))
 
 
 def build_workers(
@@ -52,19 +63,15 @@ def build_workers(
         registered = registry.get(camera.id)
         if registered is None or registered.kind != camera.kind:
             raise ValueError(f"camera {camera.id} ({camera.kind}) is not in config/cameras.json")
-    if settings.detector == "test-boxes":
-        detector, source_kind = (lambda: detect_test_boxes), "simulated"
-    else:
-        detector, source_kind = (lambda: YoloDetector(PERSON)), "demo-footage"
+    source_kind = "simulated" if settings.detector == "test-boxes" else "demo-footage"
+    detector_class = TestBoxesDetector if settings.detector == "test-boxes" else YoloDetector
     workers = []
     for camera in cameras:
         if camera.source is None:
             logger.info("camera %s has no footage: it stays grey on the map", camera.id)
             continue
-        if camera.kind != "crowd":
-            logger.warning("no %s analyzer yet: camera %s does not run", camera.kind, camera.id)
-            continue
-        analyzer = partial(_crowd_analyzer, camera, registry[camera.id])
+        detector = partial(detector_class, CLASSES[camera.kind])
+        analyzer = partial(make_analyzer, camera, registry[camera.id])
         workers.append(CameraWorker(camera, detector, analyzer, source_kind=source_kind))
     return workers
 

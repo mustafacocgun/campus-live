@@ -75,3 +75,13 @@ def test_reading_carries_only_contract_fields() -> None:
     jsonschema.validate(data, SCHEMA)
     assert set(data) == {"cameraId", "kind", "count", "level", "cells", "source", "measuredAt"}
     assert all(set(cell) == {"lat", "lng", "weight"} for cell in data["cells"])
+
+
+def test_indoor_cameras_send_counts_only() -> None:
+    # Indoors the whole building lights up: no position inside it leaves vision (D21).
+    camera = CameraConfig(id="muhendislik-ic-1", kind="crowd", thresholds={"medium": 2, "high": 5})
+    reading = CrowdAnalyzer(camera, None).update(
+        people([10, 70, 20, 90], [40, 40, 50, 60]), FRAME, NOW, "demo-footage"
+    )
+    assert (reading.count, reading.cells) == (2, None)
+    assert "cells" not in reading.to_json()

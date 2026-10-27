@@ -111,7 +111,7 @@ decisions that are the team's · never claim an improvement you did not measure.
    marked stale after 15 s without a reading (grey on the map).
 4. **Live YOLO is the only data source in the app** (each teammate runs vision on a GPU PC with the
    `yolo` extra). Nothing random or simulated is ever shown. The `test-boxes` detector (white
-   rectangles in synthetic clips) exists for automated tests only.
+   rectangles are people and yellow ones cars, in synthetic clips) exists for automated tests only.
 5. **Accuracy needs a measurement:** hand-count a clip, run the counter on it, report both numbers and
    the clip's conditions. One clip is not a rate.
 6. **Levels come from per-camera thresholds**, which are guesses until a hand count calibrates them.
@@ -166,7 +166,7 @@ decisions that are the team's · never claim an improvement you did not measure.
 | Footage                        | WILDTRACK + licensed stock clips, each in `docs/data-sources.md`               | in repo |
 | History, accounts, push alerts | Postgres, push tokens                                                          | open    |
 | LLM provider                   | any OpenAI-compatible endpoint via `LLM_*` env                                 | open    |
-| Parking and traffic analyzers  | slot polygons; line or zone counting                                           | planned |
+| Parking and traffic analyzers  | outlined slots per clip; vehicles in a road zone                               | in repo |
 
 ```bash
 npm install                      # once, from the root (npm workspaces; Node 22, .nvmrc)

@@ -136,3 +136,26 @@ def test_analyzer_load_failure_is_reported(tmp_path) -> None:
     worker.run()
     assert worker.error.startswith("FileNotFoundError")
     assert worker.latest(NOW) is None
+
+
+def test_worker_starts_at_the_camera_offset(tmp_path) -> None:
+    # Frame i shows i // 10 + 1 people: 1 in the first second, 3 from 2 s on (10 fps).
+    frames = [[(5 + 25 * n, 40, 15 + 25 * n, 80) for n in range(i // 10 + 1)] for i in range(30)]
+    clip = write_clip(str(tmp_path / "c.avi"), frames, fps=10.0)
+    camera = CameraConfig(
+        id="tas-kafe",
+        kind="crowd",
+        source=clip,
+        sample_fps=10,
+        start_s=2.0,
+        thresholds={"medium": 2, "high": 5},
+    )
+    seen = []
+
+    def detector(frame):
+        found = detect_white_boxes(frame)
+        seen.append(len(found))
+        return found
+
+    _worker(camera, lambda: detector).run()
+    assert seen[0] == 3

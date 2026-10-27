@@ -55,8 +55,12 @@ class CameraConfig(BaseModel):
     kind: CameraKind
     # A video file path or a webcam index. A camera without one does not run (grey on the map).
     source: str | None = None
+    # Seconds into the clip to start from, so cameras sharing footage do not show the same moment.
+    start_s: float = Field(default=0.0, ge=0)
     sample_fps: float = Field(default=5.0, gt=0, le=30)
     zone: list[Point] | None = None
+    # Parking cameras: each slot's outline, x, y as fractions of the frame (tools/draw_slots.py).
+    slots: list[list[Point]] | None = None
     thresholds: Thresholds | None = None
     wildtrack: WildtrackCalibration | None = None
 
@@ -67,6 +71,9 @@ class CameraConfig(BaseModel):
                 raise ValueError("a zone needs at least 3 points")
             if any(not (0 <= x <= 1 and 0 <= y <= 1) for x, y in self.zone):
                 raise ValueError("zone points are fractions of the frame, between 0 and 1")
+        for slot in self.slots or []:
+            if len(slot) < 3 or any(not (0 <= x <= 1 and 0 <= y <= 1) for x, y in slot):
+                raise ValueError("a slot needs at least 3 points, as fractions of the frame")
         if self.kind in ("crowd", "traffic") and self.thresholds is None:
             raise ValueError(f"{self.kind} cameras need thresholds")
         return self

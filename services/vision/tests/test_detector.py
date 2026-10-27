@@ -8,7 +8,15 @@ from pathlib import Path
 
 import numpy as np
 
-from vision.detector import WEIGHTS, YoloDetector, detect_test_boxes
+from vision.detector import (
+    PARKED,
+    PERSON,
+    VEHICLES,
+    WEIGHTS,
+    TestBoxesDetector,
+    YoloDetector,
+    detect_test_boxes,
+)
 
 
 def test_detector_turns_off_ultralytics_analytics(monkeypatch) -> None:
@@ -69,3 +77,14 @@ def test_weights_download_once_for_many_workers(monkeypatch, tmp_path) -> None:
         worker.join(5)
     assert len(downloads) == 1
     assert max(most_inside) == 1
+
+
+def test_test_boxes_detector_tells_people_from_cars() -> None:
+    # White boxes are people, yellow boxes are cars; each kind of camera asks for its own classes.
+    frame = np.zeros((60, 100, 3), dtype=np.uint8)
+    frame[10:40, 5:15] = 255  # white: a person
+    frame[30:50, 40:70] = (0, 220, 255)  # yellow (BGR): a car
+    assert sorted(detect_test_boxes(frame).class_id.tolist()) == [0, 2]
+    assert TestBoxesDetector(PERSON)(frame).xyxy.tolist() == [[5, 10, 15, 40]]
+    assert TestBoxesDetector(VEHICLES)(frame).xyxy.tolist() == [[40, 30, 70, 50]]
+    assert TestBoxesDetector(PARKED)(frame).class_id.tolist() == [2]
