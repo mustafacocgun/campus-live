@@ -1,7 +1,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { AssistantRequest, Camera, CameraReading, jsonSchemas, LiveSnapshot, Place } from "../src/index.js";
+import {
+  AssistantRequest,
+  Camera,
+  CameraReading,
+  CampusMap,
+  jsonSchemas,
+  LiveSnapshot,
+  Place,
+} from "../src/index.js";
 
 const crowd = {
   cameraId: "kutuphane-giris",
@@ -126,7 +134,7 @@ describe("places and live snapshots", () => {
     },
   };
   const live = {
-    ...library,
+    id: "kutuphane",
     count: 41,
     level: "high",
     parking: null,
@@ -135,13 +143,22 @@ describe("places and live snapshots", () => {
     demo: true,
   };
 
-  it("accepts a live snapshot of places and merged heat", () => {
+  it("accepts a live snapshot of places' states and the merged heat", () => {
     const snapshot = {
       places: [live],
       cells: [{ lat: 40.742, lng: 30.332, weight: 1 }],
       at: "2026-10-28T07:00:00Z",
     };
     expect(LiveSnapshot.safeParse(snapshot).success).toBe(true);
+    // Each second carries state only: the shapes come once, with the campus map.
+    expect(
+      LiveSnapshot.parse({ ...snapshot, places: [{ ...library, ...live }] }).places[0],
+    ).not.toHaveProperty("geometry");
+  });
+
+  it("accepts the campus map: its outline and every place", () => {
+    const map = { campus: { name: "Sakarya Üniversitesi", geometry: library.geometry }, places: [library] };
+    expect(CampusMap.safeParse(map).success).toBe(true);
   });
 
   it("rejects a place geometry that is not a known shape", () => {
@@ -164,6 +181,7 @@ describe("places and live snapshots", () => {
       }
     };
     walk(z.toJSONSchema(LiveSnapshot));
+    walk(z.toJSONSchema(CampusMap));
     expect(names.has("weight")).toBe(true); // the walk reaches nested objects
     for (const forbidden of [
       "cameraId",

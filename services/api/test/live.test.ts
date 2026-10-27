@@ -4,6 +4,7 @@ import { io as connect } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadRegistry, SHARED_CAMERAS_FILE } from "../src/modules/cameras/camera-registry.js";
 import { LiveStore } from "../src/modules/live/live-store.js";
+import { loadPlaces } from "../src/modules/places/place-registry.js";
 import { env, ingest, reading, startServer } from "./helpers.js";
 
 let server: Awaited<ReturnType<typeof startServer>>;
@@ -68,13 +69,14 @@ describe("GET /api/cameras", () => {
       "kafe-merkez",
       "otopark-a",
       "ana-yol",
+      "kutuphane-ic",
     ]);
     expect(all.every((camera) => camera.stale && camera.reading === null)).toBe(true);
   });
 });
 
 describe("LiveStore", () => {
-  const store = () => new LiveStore(loadRegistry(env.CAMERAS_FILE), 15_000);
+  const store = () => new LiveStore(loadRegistry(env.CAMERAS_FILE), loadPlaces(env.PLACES_FILE), 15_000);
   const at = (iso: string) => reading({ measuredAt: iso });
   const ms = (iso: string) => Date.parse(iso);
   const parkingOf = (s: LiveStore, now: string) =>

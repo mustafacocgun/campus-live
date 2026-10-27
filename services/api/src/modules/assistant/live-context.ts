@@ -1,29 +1,29 @@
-import type { CameraKind, Level, LiveCamera } from "@campus-live/contracts";
+import type { Level, PlaceKind } from "@campus-live/contracts";
+import type { PlaceView } from "./places-view.js";
 
-const KIND_TR: Record<CameraKind, string> = { crowd: "kalabalık", parking: "otopark", traffic: "trafik" };
+const KIND_TR: Record<PlaceKind, string> = { area: "açık alan", building: "bina", parking: "otopark", road: "yol" };
 export const LEVEL_TR: Record<Level, string> = { low: "Az", medium: "Orta", high: "Yoğun" };
 
-function age(ageMs: number): string {
+export function age(ageMs: number): string {
   const seconds = Math.round(ageMs / 1000);
   return seconds < 60 ? `${seconds} sn önce` : `${Math.round(seconds / 60)} dk önce`;
 }
 
-/** What a camera shows right now, in Turkish, or "güncel veri yok" when it has no fresh reading. */
-export function describeCamera(camera: LiveCamera, now: Date): string {
-  const label = `${camera.name} (${camera.section}, ${KIND_TR[camera.kind]})`;
-  const reading = camera.reading;
-  if (!reading || camera.stale) return `${label}: güncel veri yok`;
+/** What a place shows right now, in Turkish, or "güncel veri yok" without a fresh reading. */
+export function describePlace(place: PlaceView): string {
+  const label = `${place.name} (${place.section}, ${KIND_TR[place.kind]})`;
+  if (place.stale || place.count === null || place.level === null) return `${label}: güncel veri yok`;
   const value =
-    reading.kind === "parking" && reading.parking
-      ? `${reading.parking.free}/${reading.parking.total} boş`
-      : `${reading.count} ${reading.kind === "crowd" ? "kişi" : "araç"}`;
-  const demo = reading.source === "camera" ? "" : ", demo verisi";
-  return `${label}: ${value}, seviye ${LEVEL_TR[reading.level]}, ${age(camera.ageMs ?? 0)}${demo}`;
+    place.kind === "parking" && place.parking
+      ? `${place.parking.free}/${place.parking.total} boş`
+      : `${place.count} ${place.kind === "road" ? "araç" : "kişi"}`;
+  const demo = place.demo ? ", demo verisi" : "";
+  return `${label}: ${value}, seviye ${LEVEL_TR[place.level]}, ${age(place.ageMs ?? 0)}${demo}`;
 }
 
-/** One line per camera: the only facts the assistant may use. */
-export function buildLiveContext(cameras: LiveCamera[], now: Date): string {
-  return cameras.map((camera) => `- ${describeCamera(camera, now)}`).join("\n");
+/** One line per place: the only facts the assistant may use. */
+export function buildLiveContext(places: PlaceView[]): string {
+  return places.map((place) => `- ${describePlace(place)}`).join("\n");
 }
 
 export const SYSTEM_PROMPT = `Sen Campus Live'ın kampüs asistanısın. Kullanıcının sorusunu YALNIZCA aşağıdaki CANLI VERİ'ye dayanarak, kısa ve Türkçe yanıtla.

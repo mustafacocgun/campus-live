@@ -119,11 +119,19 @@ export type ReadingBatch = z.infer<typeof ReadingBatch>;
 /** A camera with no reading for this long is stale (grey). The API's STALE_AFTER_MS defaults to it. */
 export const DEFAULT_STALE_AFTER_MS = 15_000;
 
+/** The campus map, once per app start (GET /api/places): its outline and every place. */
+export const CampusMap = z.object({
+  campus: z.object({ name: z.string().min(1), geometry: PlaceGeometry }),
+  places: z.array(Place),
+});
+export type CampusMap = z.infer<typeof CampusMap>;
+
 /**
- * A place with its live state, built from its cameras' readings. Which cameras feed it, and where
- * they are, never leave the server.
+ * A place's live state, built from its cameras' readings. Which cameras feed it, and where they are,
+ * never leave the server.
  */
-export const LivePlace = Place.extend({
+export const LivePlace = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
   /** People (areas, buildings) or vehicles (parking, roads); null without a fresh reading. */
   count: z.number().int().nonnegative().nullable(),
   level: Level.nullable(),
@@ -138,7 +146,7 @@ export const LivePlace = Place.extend({
 });
 export type LivePlace = z.infer<typeof LivePlace>;
 
-/** Everything the apps get, over GET /api/live and the "live" socket event: places and the heat. */
+/** Every second (GET /api/live, the "live" socket event): each place's state and the heat. */
 export const LiveSnapshot = z.object({
   places: z.array(LivePlace),
   /** The outdoor heat: fresh cameras' cells merged by max per cell. */

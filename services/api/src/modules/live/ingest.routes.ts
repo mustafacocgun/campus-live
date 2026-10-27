@@ -17,7 +17,8 @@ export function ingestRouter(deps: { registry: CameraRegistry; store: LiveStore;
     const rejected: string[] = [];
     for (const reading of readings) {
       const camera = deps.registry.get(reading.cameraId);
-      if (!camera || camera.kind !== reading.kind) {
+      // Indoor cameras send counts only: a position inside a building never enters the API (D21).
+      if (!camera || camera.kind !== reading.kind || (camera.indoor && reading.cells)) {
         rejected.push(reading.cameraId);
         continue;
       }

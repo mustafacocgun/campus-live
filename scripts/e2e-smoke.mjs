@@ -1,7 +1,8 @@
 // End-to-end smoke test: the real API and the real vision service on spare ports, counting synthetic
 // test clips with the test-boxes detector (no footage or GPU needed). Passes when every camera has a
-// fresh reading with density cells inside its own view cone, and the assistant quotes a crowd camera's
-// live count. Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
+// fresh reading with density cells inside its own view cone, every place is live in the snapshot, and
+// the assistant quotes a place's live count. Needs `npm run build:packages` and the vision package in
+// services/vision/.venv (or $PYTHON).
 //
 //   node scripts/e2e-smoke.mjs
 
@@ -54,6 +55,7 @@ async function until(check, timeoutMs, what) {
 }
 
 const cameras = async () => (await (await fetch(`${API}/api/cameras`)).json()).data;
+const get = async (route) => (await (await fetch(`${API}${route}`)).json()).data;
 
 // Half the diagonal of a 3 m cell: a cell's centre may sit this far from the feet binned into it.
 const CELL_SLACK_M = 2.2;
@@ -134,21 +136,33 @@ try {
   const total = live.reduce((sum, camera) => sum + camera.reading.cells.length, 0);
   console.log(`ok: all ${total} cells lie inside their camera's view cone`);
 
-  const tasKafe = async () => (await cameras()).find((camera) => camera.id === "tas-kafe");
-  const before = await tasKafe();
+  // The apps' view: every place has a camera, so with every camera fresh every place is live.
+  const { places } = await get("/api/places");
+  const snapshot = await get("/api/live");
+  const quiet = snapshot.places.filter((place) => place.stale).map((place) => place.id);
+  if (snapshot.places.length !== places.length || quiet.length) {
+    throw new Error(`places without a live state: ${quiet.join(", ") || "a place is missing"}`);
+  }
+  console.log(
+    `ok: all ${places.length} places are live in /api/live, with ${snapshot.cells.length} heat cells`,
+  );
+
+  const area = places.find((place) => place.name === "Taş Kafe önü");
+  const state = async () => (await get("/api/live")).places.find((place) => place.id === area.id);
+  const before = await state();
   const response = await fetch(`${API}/api/assistant/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ message: "Taş Kafe kalabalık mı?" }),
   });
   const { answer, via } = (await response.json()).data;
-  const after = await tasKafe();
-  const phrase = (camera) => `Taş Kafe: ${camera.reading.count} kişi`;
+  const after = await state();
+  const phrase = (place) => `Taş Kafe önü: ${place.count} kişi`;
   // Readings change every second, so the answer may match the state just before or just after it.
-  if (via !== "fallback" || ![before, after].some((camera) => answer.includes(phrase(camera)))) {
-    throw new Error(`the assistant did not quote Taş Kafe's live count:\n${answer}`);
+  if (via !== "fallback" || ![before, after].some((place) => answer.includes(phrase(place)))) {
+    throw new Error(`the assistant did not quote Taş Kafe önü's live count:\n${answer}`);
   }
-  console.log(`ok: the assistant quoted Taş Kafe's live count (${phrase(before)})`);
+  console.log(`ok: the assistant quoted Taş Kafe önü's live count (${phrase(before)})`);
   console.log("E2E SMOKE PASSED");
 } catch (error) {
   console.error(`E2E SMOKE FAILED: ${error.message}`);

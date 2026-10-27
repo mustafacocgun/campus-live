@@ -9,16 +9,20 @@ import type { CameraRegistry } from "./modules/cameras/camera-registry.js";
 import { camerasRouter } from "./modules/cameras/cameras.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { ingestRouter } from "./modules/live/ingest.routes.js";
+import { liveRouter } from "./modules/live/live.routes.js";
 import type { LiveStore } from "./modules/live/live-store.js";
+import type { PlaceRegistry } from "./modules/places/place-registry.js";
+import { placesRouter } from "./modules/places/places.routes.js";
 
 export interface AppDeps {
   registry: CameraRegistry;
+  places: PlaceRegistry;
   store: LiveStore;
   env: Env;
   llm: LlmClient | null;
 }
 
-export function createApp({ registry, store, env, llm }: AppDeps) {
+export function createApp({ registry, places, store, env, llm }: AppDeps) {
   const app = express();
   app.disable("x-powered-by");
   app.use(helmet());
@@ -28,7 +32,9 @@ export function createApp({ registry, store, env, llm }: AppDeps) {
 
   app.use("/api/health", healthRouter);
   app.use("/api/cameras", camerasRouter(store));
-  app.use("/api/assistant", assistantRouter({ store, llm }));
+  app.use("/api/places", placesRouter(places));
+  app.use("/api/live", liveRouter(store));
+  app.use("/api/assistant", assistantRouter({ store, places, llm }));
   app.use("/internal/readings", ingestRouter({ registry, store, token: env.VISION_INGEST_TOKEN }));
 
   app.use(notFound);
