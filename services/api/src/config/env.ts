@@ -1,11 +1,21 @@
 import { DEFAULT_STALE_AFTER_MS } from "@campus-live/contracts";
 import { z } from "zod";
 
+/** The value in both .env.example files: public, so anyone on the network could post readings with it (#8). */
+const PLACEHOLDER_TOKEN = "change-me-to-a-long-random-string";
+
 export const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:8081"),
-  VISION_INGEST_TOKEN: z.string().min(16, "VISION_INGEST_TOKEN must be at least 16 characters"),
+  VISION_INGEST_TOKEN: z
+    .string()
+    .min(16, "VISION_INGEST_TOKEN must be at least 16 characters")
+    .refine((token) => token !== PLACEHOLDER_TOKEN, {
+      message:
+        "VISION_INGEST_TOKEN is still the .env.example placeholder: put the same random value in " +
+        "services/api/.env and services/vision/.env (see the README's setup step)",
+    }),
   // The apps assume the default (DEFAULT_STALE_AFTER_MS); change both together.
   STALE_AFTER_MS: z.coerce.number().int().positive().default(DEFAULT_STALE_AFTER_MS),
   CAMERAS_FILE: z.string().default("config/cameras.json"),

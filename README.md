@@ -32,6 +32,7 @@ leave the vision service; the apps get numbers only. Design: [docs/architecture.
 npm install                                   # Node 22; one install for every workspace
 cp services/api/.env.example services/api/.env
 cp services/vision/.env.example services/vision/.env   # the same VISION_INGEST_TOKEN in both files
+node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"   # paste as VISION_INGEST_TOKEN in both; the API refuses the placeholder
 cp apps/web/.env.example apps/web/.env.local
 
 cd services/vision && python -m venv .venv
