@@ -45,6 +45,8 @@ def projector_for(camera: CameraConfig, registered: Camera) -> FeetProjector:
 
 # What each kind of camera looks for (COCO classes).
 CLASSES = {"crowd": PERSON, "parking": PARKED, "traffic": VEHICLES}
+# YOLO's input size where the default (640 px) is too small: parked cars far away are a few pixels (#50).
+IMAGE_SIZE = {"parking": 1280}
 
 
 def make_analyzer(camera: CameraConfig, registered: Camera) -> CrowdAnalyzer | ParkingAnalyzer:
@@ -70,7 +72,7 @@ def build_workers(
         if camera.source is None:
             logger.info("camera %s has no footage: it stays grey on the map", camera.id)
             continue
-        detector = partial(detector_class, CLASSES[camera.kind])
+        detector = partial(detector_class, CLASSES[camera.kind], imgsz=IMAGE_SIZE.get(camera.kind))
         analyzer = partial(make_analyzer, camera, registry[camera.id])
         workers.append(CameraWorker(camera, detector, analyzer, source_kind=source_kind))
     return workers

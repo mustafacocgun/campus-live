@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
+from conftest import fake_yolo
 from vision.detector import (
     PARKED,
     PERSON,
@@ -77,6 +78,16 @@ def test_weights_download_once_for_many_workers(monkeypatch, tmp_path) -> None:
         worker.join(5)
     assert len(downloads) == 1
     assert max(most_inside) == 1
+
+
+def test_detector_sets_the_input_size_only_when_asked(monkeypatch) -> None:
+    # Distant cars are a few pixels at YOLO's default 640 px: parking cameras ask for more (#50).
+    calls = fake_yolo(monkeypatch)
+    frame = np.zeros((72, 128, 3), dtype=np.uint8)
+    YoloDetector(PARKED, imgsz=1280)(frame)
+    YoloDetector(PERSON)(frame)
+    assert calls[0]["imgsz"] == 1280
+    assert "imgsz" not in calls[1]
 
 
 def test_test_boxes_detector_tells_people_from_cars() -> None:
