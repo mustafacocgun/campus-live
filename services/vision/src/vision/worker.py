@@ -10,6 +10,7 @@ import supervision as sv
 
 from vision.cameras import CameraConfig
 from vision.contracts import CameraReading, ReadingSource
+from vision.preview import Preview, annotate
 from vision.worker_base import WorkerBase
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class CameraWorker(WorkerBase):
         source_kind: ReadingSource = "demo-footage",
         loop: bool = True,
         realtime: bool = True,
+        preview: Preview | None = None,
     ) -> None:
         super().__init__(camera)
         self.source = parse_source(camera.source) if camera.source else None
@@ -49,6 +51,8 @@ class CameraWorker(WorkerBase):
         self.source_kind = source_kind
         self.loop = loop
         self.realtime = realtime
+        # Only with VISION_PREVIEW on (D33); None otherwise.
+        self.preview = preview
         self.frames_read = 0
 
     def run(self) -> None:
@@ -87,9 +91,11 @@ class CameraWorker(WorkerBase):
                     if not ok:
                         raise RuntimeError("could not decode a frame")
                     height, width = frame.shape[:2]
-                    self._record(
-                        analyzer.update(detect(frame), (width, height), self._now(), self.source_kind)
-                    )
+                    detections = detect(frame)
+                    self._record(analyzer.update(detections, (width, height), self._now(), self.source_kind))
+                    # The stage preview keeps one annotated JPEG in memory while someone watches (D33).
+                    if self.preview is not None and self.preview.wanted():
+                        self.preview.put(annotate(frame, detections))
                     # The frame goes out of scope here: frames are never stored (CLAUDE.md §0.2).
                 if self.realtime and is_file:
                     self._stop.wait(max(0.0, 1 / fps - (monotonic() - started)))

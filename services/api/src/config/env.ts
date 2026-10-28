@@ -51,6 +51,10 @@ export const EnvSchema = z.object({
   MAIL_FROM: z.string().default("Campus Live <no-reply@campus-live.local>"),
   // The web app's address, for the link in alert e-mails.
   APP_URL: z.string().default("http://localhost:3000"),
+  // The stage preview (D33): the vision services' addresses on the demo machine, comma separated
+  // (http://127.0.0.1:8001,http://127.0.0.1:8002), with VISION_PREVIEW on there. Unset, the preview
+  // route answers 404.
+  VISION_PREVIEW_URL: optionalText,
 });
 export type Env = z.infer<typeof EnvSchema>;
 
