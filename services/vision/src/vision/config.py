@@ -24,4 +24,7 @@ class Settings(BaseSettings):
     # The stage preview (D33): each camera's newest frame with its boxes, served at /preview/<id> for
     # the API to pass to the place detail on web and phone. Off unless the demo machine turns it on.
     preview: bool = False
+    # Where the service listens: localhost, as it pushes readings out. Only a second demo PC whose
+    # stage preview the API's machine pulls (D33) opens it (0.0.0.0), firewalled to that machine.
+    host: str = "127.0.0.1"
     port: int = 8001

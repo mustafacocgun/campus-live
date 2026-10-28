@@ -32,7 +32,7 @@ first. Cameras can run on several PCs: each sets sources only for its own camera
 API.
 
 It serves `GET /health` and `GET /status` (each running camera's readings per second, last reading
-time, error type) on `127.0.0.1:8001`.
+time, error type) on `127.0.0.1:8001` (`VISION_HOST`, `VISION_PORT`).
 
 | Variable                    | Default                        | Meaning                                       |
 | --------------------------- | ------------------------------ | --------------------------------------------- |
@@ -42,6 +42,7 @@ time, error type) on `127.0.0.1:8001`.
 | `VISION_CAMERAS_FILE`       | `configs/cameras.example.yaml` | Camera config (the example runs nothing)      |
 | `VISION_REPLAY_FILE`        | `recordings/demo.jsonl`        | Written by `vision.record`, played by `replay` |
 | `VISION_PUBLISH_INTERVAL_S` | `0.5`                          | Seconds between pushes                        |
+| `VISION_HOST`               | `127.0.0.1`                    | Where it listens; `0.0.0.0` only for the stage preview from a second PC (below) |
 
 ## Places and cameras on the campus
 
@@ -121,6 +122,29 @@ Measured on one laptop (RTX 4050, 6 GB) with 52 crowd cameras on 2 fps WILDTRACK
 process kept a median 1.33 readings a second per camera (clips play at 2), with or without 720p
 clips; two processes of 26 kept 1.83–1.87, using 4.7 GB of GPU memory. Name the part files
 `cameras.<anything>.yaml` and keep them out of git: they hold the clip paths.
+
+## The stage preview from a second PC
+
+The API pulls the stage preview (D33) from each address in its `VISION_PREVIEW_URL`, and vision
+listens on localhost only. When some cameras run on a second PC (the car parks on one PC, the API and
+the rest on another), that PC opens its vision to the API's machine alone:
+
+1. In the second PC's `.env`: `VISION_PREVIEW=true` and `VISION_HOST=0.0.0.0`.
+2. Once, in PowerShell as administrator, in `services/vision`: a firewall rule for the API's machine
+   only. It names the venv's base Python, the process that listens (the venv's `python.exe` only
+   starts it), so Windows does not offer to open it to every network:
+
+   ```powershell
+   $python = Join-Path (Get-Content .venv\pyvenv.cfg | Select-String '^home = (.+)$').Matches.Groups[1].Value python.exe
+   New-NetFirewallRule -DisplayName "Campus Live vision preview" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8001 -RemoteAddress <the API machine's IP> -Program $python
+   ```
+
+3. On the API's machine, the second PC's address goes last, e.g.
+   `VISION_PREVIEW_URL=http://127.0.0.1:8001,http://192.168.1.21:8001`: the API asks each address in
+   turn and waits for one that is off to fail, so last means only that PC's cameras wait.
+
+Both addresses come from the Wi-Fi (`ipconfig`); check them on the day. After the demo:
+`Remove-NetFirewallRule -DisplayName "Campus Live vision preview"`.
 
 ## Where people land on the map
 

@@ -149,7 +149,8 @@ async def mjpeg(preview: Preview, poll_s: float = 0.05) -> AsyncIterator[bytes]:
 @app.get("/preview/{camera_id}")
 def preview(camera_id: str) -> StreamingResponse:
     """The stage preview of one camera (D33): 404 unless VISION_PREVIEW is on and the camera runs on
-    video. Only the API calls it; the service listens on localhost only."""
+    video. Only the API calls it; the service listens on localhost unless VISION_HOST opens it to the
+    API's machine."""
     worker = next((w for w in app.state.workers if w.camera.id == camera_id), None)
     slot = getattr(worker, "preview", None)
     if slot is None:
