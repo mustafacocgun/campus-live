@@ -51,3 +51,15 @@ def test_a_full_lot_is_busy() -> None:
 def test_a_parking_camera_needs_outlined_slots() -> None:
     with pytest.raises(ValueError, match="slot"):
         _analyzer(slots=None)
+
+
+def test_a_slot_counts_whatever_order_its_corners_were_clicked_in() -> None:
+    # Top-left, top-right, bottom-left, bottom-right: clicked in reading order, the outline crosses itself.
+    crossed = [[(0.1, 0.5), (0.4, 0.5), (0.1, 0.9), (0.4, 0.9)]]
+    reading = _analyzer(slots=crossed).update(cars([12, 52, 38, 88]), FRAME, NOW, "demo-footage")
+    assert (reading.parking.total, reading.parking.free) == (1, 0)
+
+
+def test_a_slot_with_its_corners_on_one_line_is_refused() -> None:
+    with pytest.raises(ValueError, match="slot"):
+        _analyzer(slots=[[(0.1, 0.5), (0.2, 0.5), (0.3, 0.5), (0.4, 0.5)]])

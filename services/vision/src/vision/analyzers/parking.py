@@ -32,8 +32,12 @@ class ParkingAnalyzer:
         """One sampled frame. `frame_size` is (width, height); detections are vehicles only."""
         if self._frame != frame_size:
             width, height = frame_size
+            # The convex hull: corners clicked in any order (reading order crosses the outline) give
+            # the same slot, and intersectConvexConvex needs a convex one.
             self._polygons = [
-                np.array([(x * width, y * height) for x, y in slot], dtype=np.float32)
+                cv2.convexHull(
+                    np.array([(x * width, y * height) for x, y in slot], dtype=np.float32)
+                ).reshape(-1, 2)
                 for slot in self.camera.slots
             ]
             self._frame = frame_size
