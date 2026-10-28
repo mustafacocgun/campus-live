@@ -34,7 +34,13 @@
           "imageWidth": 76
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Campus Live, sana en yakın otoparkı ve kafeyi bulmak için konumunu kullanır. Konumun kaydedilmez."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
