@@ -165,7 +165,126 @@ export const AssistantResponse = z.object({
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
 
-export const SOCKET_EVENTS = { live: "live" } as const;
+/**
+ * A place users can set alerts on: one that at least one camera feeds. Its percent is the place's
+ * count over a placeholder capacity (CLAUDE.md §0.5), shown as "tahmini"; a parking lot uses its slots.
+ * Only fresh cameras count, so a camera falling silent neither raises nor lowers it. Like every public
+ * payload, it never names or locates a camera (§0.2), and it carries no capacity, which would hint at
+ * how many cameras a place has.
+ */
+export const Region = z.object({
+  /** The place's id in config/places.json. */
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1),
+  kind: PlaceKind,
+  section: z.string().min(1),
+  /** A whole percent; null while none of its cameras has a fresh reading. */
+  percent: z.number().int().nonnegative().nullable(),
+  /** True when any reading behind `percent` is demo data. */
+  demo: z.boolean(),
+});
+export type Region = z.infer<typeof Region>;
+
+const Email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254, "E-posta adresi çok uzun.")
+  .pipe(z.email("Geçerli bir e-posta adresi girin."));
+
+/** Sign-up: a school e-mail (its domain is checked by the API) and a password. */
+export const SignupRequest = z.object({
+  email: Email,
+  password: z.string().min(8, "Şifre en az 8 karakter olmalı.").max(200, "Şifre çok uzun."),
+});
+export type SignupRequest = z.infer<typeof SignupRequest>;
+
+export const LoginRequest = z.object({
+  email: Email,
+  password: z.string().min(1, "Şifrenizi girin.").max(200, "Şifre çok uzun."),
+});
+export type LoginRequest = z.infer<typeof LoginRequest>;
+
+/** The 6-digit code the sign-up e-mail carries. */
+export const VerifyRequest = z.object({
+  email: Email,
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Kod 6 haneli bir sayı olmalı."),
+});
+export type VerifyRequest = z.infer<typeof VerifyRequest>;
+
+export const ResendCodeRequest = z.object({ email: Email });
+export type ResendCodeRequest = z.infer<typeof ResendCodeRequest>;
+
+/** What the sign-up form needs to know: the school domains, and whether mails go to the dev outbox. */
+export const AuthConfig = z.object({
+  domains: z.array(z.string()),
+  /** True in development without SMTP: codes are written to services/api/.mail-outbox, not mailed. */
+  devOutbox: z.boolean(),
+});
+export type AuthConfig = z.infer<typeof AuthConfig>;
+
+/** The signed-in user, as the apps see it. The e-mail never goes into a log or an LLM prompt (§0.4). */
+export const User = z.object({ id: z.string(), email: z.string() });
+export type User = z.infer<typeof User>;
+
+/** Notify when a place's percent falls below, or rises above, the user's threshold. */
+export const AlertDirection = z.enum(["below", "above"]);
+export type AlertDirection = z.infer<typeof AlertDirection>;
+
+export const AlertRuleInput = z.object({
+  /** A place's id (Region.id). */
+  place: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]+$/, "Bir yer seçin."),
+  direction: AlertDirection,
+  thresholdPct: z.number().int().min(1, "Eşik en az %1 olmalı.").max(100, "Eşik en fazla %100 olabilir."),
+  /** Also send the alert to the user's e-mail; in-app is always on. */
+  email: z.boolean(),
+});
+export type AlertRuleInput = z.infer<typeof AlertRuleInput>;
+
+export const AlertRulePatch = AlertRuleInput.omit({ place: true })
+  .extend({ enabled: z.boolean() })
+  .partial()
+  .refine((patch) => Object.keys(patch).length > 0, "Değiştirilecek bir alan yok.");
+export type AlertRulePatch = z.infer<typeof AlertRulePatch>;
+
+export const AlertRule = AlertRuleInput.extend({
+  id: z.string(),
+  /** The place's name, for the list; the rule keeps its id even if the name changes. */
+  placeName: z.string(),
+  enabled: z.boolean(),
+  createdAt: z.iso.datetime(),
+  lastNotifiedAt: z.iso.datetime().nullable(),
+});
+export type AlertRule = z.infer<typeof AlertRule>;
+
+/** One alert sent to a user: kept so the in-app inbox can show what arrived while they were away. */
+export const AlertNotification = z.object({
+  id: z.string(),
+  place: z.string(),
+  placeName: z.string(),
+  direction: AlertDirection,
+  thresholdPct: z.number().int(),
+  percent: z.number().int().nonnegative(),
+  demo: z.boolean(),
+  message: z.string(),
+  createdAt: z.iso.datetime(),
+  readAt: z.iso.datetime().nullable(),
+});
+export type AlertNotification = z.infer<typeof AlertNotification>;
+
+export const MarkReadRequest = z.object({
+  /** The notifications to mark read; all of the user's when left out. */
+  ids: z.array(z.string()).max(200).optional(),
+});
+export type MarkReadRequest = z.infer<typeof MarkReadRequest>;
+
+export const SOCKET_EVENTS = { live: "live", notification: "notification" } as const;
 
 /** The JSON Schemas the vision service's tests check against, keyed by file name. */
 export function jsonSchemas(): Record<string, unknown> {
