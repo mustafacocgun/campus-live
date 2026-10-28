@@ -21,7 +21,9 @@ from vision.detector import PARKED, PERSON, VEHICLES, TestBoxesDetector, YoloDet
 from vision.projection import CameraPose, PoseProjector
 from vision.publisher import Publisher
 from vision.registry import load_registry
+from vision.replay import ReplayWorker, load_dataset
 from vision.worker import CameraWorker
+from vision.worker_base import WorkerBase
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +62,18 @@ def make_analyzer(camera: CameraConfig, registered: Camera) -> CrowdAnalyzer | P
 
 def build_workers(
     settings: Settings, cameras: list[CameraConfig], registry: dict[str, Camera]
-) -> list[CameraWorker]:
+) -> list[WorkerBase]:
     for camera in cameras:
         registered = registry.get(camera.id)
         if registered is None or registered.kind != camera.kind:
             raise ValueError(f"camera {camera.id} ({camera.kind}) is not in config/cameras.json")
+    if settings.detector == "replay":
+        # A missing or bad dataset stops startup: it is a local file, checked at rehearsal.
+        tracks = load_dataset(settings.replay_file, cameras)
+        for camera in cameras:
+            if camera.id not in tracks:
+                logger.info("camera %s has no recorded readings: it stays grey on the map", camera.id)
+        return [ReplayWorker(camera, tracks[camera.id]) for camera in cameras if camera.id in tracks]
     source_kind = "simulated" if settings.detector == "test-boxes" else "demo-footage"
     detector_class = TestBoxesDetector if settings.detector == "test-boxes" else YoloDetector
     workers = []

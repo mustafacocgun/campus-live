@@ -24,7 +24,8 @@ cp configs/cameras.example.yaml configs/cameras.yaml    # then set `source` for 
 VISION_CAMERAS_FILE=configs/cameras.yaml python -m vision
 ```
 
-Live YOLO is the only data source in the app (CLAUDE.md §3.4). A camera without footage does not run
+Live YOLO is the only data source in the app, or a replay of what it recorded (below; CLAUDE.md §3.4). A
+camera without footage does not run
 and stays grey on the map. The first run downloads `yolo11n.pt` into `models/` (git-ignored). Put
 clips in `videos/` (git-ignored) and record each clip's source and license in `docs/data-sources.md`
 first. Cameras can run on several PCs: each sets sources only for its own cameras, and all push to one
@@ -37,8 +38,9 @@ time, error type) on `127.0.0.1:8001`.
 | --------------------------- | ------------------------------ | --------------------------------------------- |
 | `VISION_API_URL`            | `http://localhost:4000`        | Where readings are pushed                     |
 | `VISION_INGEST_TOKEN`       | empty                          | Must equal the API's token; keep it in `.env` |
-| `VISION_DETECTOR`           | `yolo`                         | `yolo`, or `test-boxes` for synthetic clips   |
+| `VISION_DETECTOR`           | `yolo`                         | `yolo`, `replay`, or `test-boxes` for synthetic clips |
 | `VISION_CAMERAS_FILE`       | `configs/cameras.example.yaml` | Camera config (the example runs nothing)      |
+| `VISION_REPLAY_FILE`        | `recordings/demo.jsonl`        | Written by `vision.record`, played by `replay` |
 | `VISION_PUBLISH_INTERVAL_S` | `0.5`                          | Seconds between pushes                        |
 
 ## Places and cameras on the campus
@@ -142,6 +144,33 @@ clips; two processes of 26 kept 1.83–1.87, using 4.7 GB of GPU memory. Name th
 
 The camera order (C1 = CVLab1 … C7 = IDIAP3), the file formats, the centimetre unit and the 2 fps
 frame rate were checked against the downloaded files on 2026-10-28 (`docs/data-sources.md`).
+
+## Record once, replay without a GPU
+
+Live YOLO on every camera needs a GPU PC per few dozen cameras (#39). Recorded readings need none: record
+on the GPU PCs once, and any laptop (and the stage) plays every camera back (D32).
+
+1. **Record**, on a PC with the `yolo` extra and `configs/cameras.yaml` giving each camera its clip:
+
+   ```bash
+   python -m vision.record --cameras configs/cameras.yaml --out recordings/demo.jsonl
+   ```
+
+   Each camera with footage runs its whole clip once, from the start, through the same detector and
+   analyzer as live: crowd counts with their density cells, parking free/total, traffic counts. It runs
+   as fast as the clip decodes; webcams are refused. Datasets from several PCs can be joined line by
+   line: `cat a.jsonl b.jsonl > demo.jsonl`.
+
+2. **Replay:** `VISION_DETECTOR=replay` (with `VISION_CAMERAS_FILE` and `VISION_REPLAY_FILE`), then
+   `npm run dev`. Each recorded camera loops over its readings forever with their recorded spacing,
+   stamped with the current time; the source stays what was recorded (`demo-footage`, or `simulated`
+   for test clips; never `camera`). Cameras with nothing recorded stay grey. A missing or invalid
+   dataset stops startup.
+
+The dataset is JSON Lines, one `CameraReading` per line in its wire format with `measuredAt` replaced
+by `offsetS`, the seconds into the clip. It holds numbers only, never frames. `recordings/` is
+git-ignored, like the footage a dataset is made from and each PC's clip assignment: share it the way
+you share clips.
 
 ## Without footage or a GPU
 

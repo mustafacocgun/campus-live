@@ -12,6 +12,7 @@ from conftest import VISION_DIR
         "datasets/wildtrack/calibrations/extrinsic/extr_CVLab1.xml",
         "configs/cameras.yaml",
         "configs/cameras.part2.yaml",  # a second vision process's share of the cameras
+        "recordings/demo.jsonl",  # replay readings, made from footage that is never committed
     ],
 )
 def test_footage_datasets_and_local_config_are_never_committed(path) -> None:
