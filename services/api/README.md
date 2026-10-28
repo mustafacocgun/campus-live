@@ -33,8 +33,11 @@ to start when a camera feeds no known place or a place has a camera's id. `PLACE
 
 ## The assistant
 
-Set `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` in `.env` (any OpenAI-compatible API) to answer with the
-LLM; leave them empty and it answers rule-based from the same live data. Before building more UI around
+The team uses Google AI Studio's free tier with `gemini-3.5-flash-lite` (D26). `.env.example` already has its
+base URL and model, so only `LLM_API_KEY` is left: a free key from aistudio.google.com. Any other
+OpenAI-compatible API works through the same three settings; without a key it answers rule-based from the
+same live data. On the free tier Google may use the questions and human reviewers may read them, so a
+question must never carry personal data (CLAUDE.md §0.4). Before building more UI around
 it, run the 5 real questions against a running stack and check every number (CLAUDE.md §4.8):
 
 ```bash

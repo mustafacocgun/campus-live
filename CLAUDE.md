@@ -165,7 +165,7 @@ decisions that are the team's · never claim an improvement you did not measure.
 | Live state                     | in memory in the API (latest reading per camera; places and heat from it)      | in repo |
 | Footage                        | WILDTRACK + licensed stock clips, each in `docs/data-sources.md`               | in repo |
 | History, accounts, push alerts | Postgres, push tokens                                                          | open    |
-| LLM provider                   | any OpenAI-compatible endpoint via `LLM_*` env                                 | open    |
+| LLM provider                   | Google AI Studio free tier, `gemini-3.5-flash-lite` (D26), via `LLM_*` env     | decided |
 | Parking and traffic analyzers  | outlined slots per clip; vehicles in a road zone                               | in repo |
 
 ```bash
