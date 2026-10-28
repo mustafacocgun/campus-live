@@ -14,6 +14,9 @@ next-env.d.ts
 .env.*
 !.env.example
 
+# Development mail (sign-up codes and alerts written instead of sent): addresses, never committed
+services/api/.mail-outbox/
+
 # Python
 __pycache__/
 *.pyc

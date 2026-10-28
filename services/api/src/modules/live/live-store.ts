@@ -1,4 +1,5 @@
 import type {
+  Camera,
   CameraReading,
   DensityCell,
   Level,
@@ -45,6 +46,21 @@ export class LiveStore {
     const currentIsFresh = current && receivedAt - current.receivedAt <= this.staleAfterMs;
     if (currentIsFresh && Date.parse(current.reading.measuredAt) > Date.parse(reading.measuredAt)) return;
     this.latest.set(reading.cameraId, { reading, receivedAt });
+  }
+
+  /**
+   * Each place's fresh readings with the camera behind each, for the API's own use: the alert percents
+   * weigh every camera by its own capacity. It names cameras, so it is never served (CLAUDE.md §0.2).
+   */
+  freshByPlace(now: Date): Map<string, { camera: Camera; reading: CameraReading }[]> {
+    const fresh = new Map<string, { camera: Camera; reading: CameraReading }[]>();
+    for (const camera of this.registry.list()) {
+      const entry = this.latest.get(camera.id);
+      if (!entry || now.getTime() - entry.receivedAt > this.staleAfterMs) continue;
+      const place = camera.place as string;
+      fresh.set(place, [...(fresh.get(place) ?? []), { camera, reading: entry.reading }]);
+    }
+    return fresh;
   }
 
   /**

@@ -1,0 +1,5 @@
+{
+  "_note": "Test capacities for the API's tests only; the placeholders the app uses are in config/capacity.json.",
+  "defaultPerCamera": { "crowd": 10, "traffic": 5 },
+  "cameras": { "kafe-merkez": 20 }
+}
