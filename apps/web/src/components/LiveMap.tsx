@@ -36,9 +36,9 @@ const GLIDE_MS = 500;
 const BASE_BUILDINGS = "building";
 const BASE_BUILDINGS_3D = "building-3d";
 const PITCH_3D = 50;
-// Left alone this long, the map slowly turns around its center: a full turn in four minutes.
-const IDLE_MS = 10_000;
-const TURN_DEG_PER_S = 1.5;
+// Left alone this long, the map slowly turns around its center: a full turn in 160 seconds.
+const IDLE_MS = 5_000;
+const TURN_DEG_PER_S = 2.25;
 // Our layers a click selects a place from.
 const CLICKABLE = ["lots-fill", "roads-line", "buildings-fill", "buildings-3d", "labels-dot", "labels-text"];
 

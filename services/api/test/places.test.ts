@@ -113,8 +113,8 @@ describe("LiveStore.live", () => {
 
   it("is demo unless every fresh reading comes from a real camera", () => {
     const s = store();
-    s.upsert(crowd("kutuphane-ic", 4, { source: "camera" }), T0);
-    s.upsert(crowd("kutuphane-ic-2", 4, { source: "camera" }), T0);
+    s.upsert(crowd("kutuphane-ic", 4, { source: "camera", measuredAt: at(0).toISOString() }), T0);
+    s.upsert(crowd("kutuphane-ic-2", 4, { source: "camera", measuredAt: at(0).toISOString() }), T0);
     expect(placeOf(s, "kutuphane-binasi").demo).toBe(false);
     s.upsert(crowd("kutuphane-ic-2", 4, { source: "demo-footage", measuredAt: at(1).toISOString() }), T0 + 1);
     expect(placeOf(s, "kutuphane-binasi").demo).toBe(true);
