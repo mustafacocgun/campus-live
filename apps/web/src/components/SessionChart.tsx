@@ -100,7 +100,7 @@ export function SessionChart({ points, unit }: { points: SessionPoint[]; unit: s
           </text>
         </g>
         <defs>
-          {/* The brand's violet-to-fuchsia, along the line and fading down through the area. */}
+          {/* The theme's two accent blues, along the line and fading down through the area. */}
           <linearGradient id={`${gradient}-line`} x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" stopColor="var(--accent)" />
             <stop offset="1" stopColor="var(--brand-2)" />

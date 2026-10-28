@@ -20,7 +20,7 @@ const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
 
 // The heat layer's ramp (LiveMap's heatmap-color), as a CSS gradient for the legend.
 const HEAT_RAMP =
-  "linear-gradient(to right, rgba(217,70,239,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
+  "linear-gradient(to right, rgba(37,99,235,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
 
 const LEVEL_ORDER: Level[] = ["low", "medium", "high"];
 type Sort = "level" | "name";
@@ -209,7 +209,7 @@ export function LiveDashboard() {
           )}
           <section
             aria-label="Yerler"
-            className={`flex flex-col lg:min-h-0 lg:flex-[2] ${aiWide ? "lg:hidden" : ""}`}
+            className={`flex flex-col lg:min-h-0 lg:flex-[3] ${aiWide ? "lg:hidden" : ""}`}
           >
             {selected ? (
               <div className="p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
@@ -268,8 +268,8 @@ export function LiveDashboard() {
           {/* The campus assistant, always in view and the larger part of the side panel. */}
           <section
             aria-label="Kampüs asistanı"
-            className={`flex h-[600px] flex-col border-t border-line p-3 lg:h-auto lg:min-h-[340px] ${
-              aiWide ? "lg:flex-1" : "lg:flex-[3]"
+            className={`flex h-[600px] flex-col border-t border-line p-3 lg:h-auto lg:min-h-[320px] ${
+              aiWide ? "lg:flex-1" : "lg:flex-[2]"
             }`}
           >
             <AssistantPanel
