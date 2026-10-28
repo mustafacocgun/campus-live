@@ -252,7 +252,8 @@ export default function LiveMap({
           filter: ["!=", ["geometry-type"], "Point"],
           paint: { "line-color": "#2563eb", "line-width": 4, "line-opacity": 0.9 },
         },
-        ground,
+        // Above the buildings: a selected building's outline must show in 3D too.
+        undefined,
       );
       target.addLayer(
         {
@@ -269,7 +270,7 @@ export default function LiveMap({
           id: "buildings-3d",
           type: "fill-extrusion",
           source: "buildings",
-          minzoom: 14,
+          // At every zoom: in 3D the flat tint is hidden, so lit buildings must not vanish below 14.
           layout: { visibility: modeRef.current === "3d" ? "visible" : "none" },
           paint: {
             "fill-extrusion-color": ["get", "color"],
