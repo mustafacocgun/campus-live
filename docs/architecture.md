@@ -98,7 +98,15 @@ The zod schemas are the single source of truth. A build step writes them as JSON
 - **Frames never leave the vision service and are never written to disk.** Only readings leave it: counts, free slots and **aggregated** density cells. No identities, tracks or per-person positions ever leave vision.
 - **Camera positions never leave the server:** not in the public API, socket events, the apps or their bundles.
 - **Footage:** WILDTRACK (research and evaluation license) and licensed stock clips, each with a line in `docs/data-sources.md`. Videos, dataset files and model weights are never committed.
-- **No accounts in v1.**
+- **Accounts keep only what alerts need** (D26): the school e-mail, a scrypt hash of the password, session-token hashes, alert rules and the notifications sent. No names or student numbers. E-mails never go into a log or the LLM prompt, and the assistant never sees accounts.
+
+## Accounts and place alerts
+
+- **Optional.** With `DATABASE_URL` set and Postgres reachable, the API applies `services/api/migrations/*.sql` at startup and turns accounts on; otherwise `/api/auth` and `/api/alerts` answer 503 and the map and assistant work unchanged.
+- **Sign-up:** a school e-mail (exact domain match against `ALLOWED_EMAIL_DOMAINS`) and a password; a 6-digit code is mailed (15 minutes, 5 tries) and the account opens when it is entered. After that: e-mail + password. The session is an HttpOnly, SameSite=Lax cookie; the database keeps only its hash.
+- **What an alert watches:** a place that some camera feeds (`GET /api/regions`), so a place a new camera feeds can be chosen after the API restarts. Its percent is the place's fresh count over private per-camera placeholder capacities (`services/api/config/capacity.json`, labelled "tahmini"), by the place's own rule: an area or a road as full as its fullest camera, a building or a parking lot summed (a lot uses its slots). A silent camera leaves both the count and the capacity. The response carries places and percents only: no camera, no capacity (§0.2).
+- **Rules:** a place, below or above, a threshold in percent, and e-mail on or off. The API checks every enabled rule once a second, like the live snapshot. A rule fires once when its place crosses the threshold, again only after the place is back 5 points past it, and never twice within 10 minutes. A new rule, or a restart, only looks first: it never fires on sight.
+- **Delivery:** a row in `notifications` (the in-app inbox), the Socket.IO `notification` event to that user's room (a toast, and a browser notification while the page is in the background), and the e-mail when asked. Readings that are not from a camera make the alert say "Demo verisi".
 
 ## Running it
 
