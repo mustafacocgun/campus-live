@@ -7,11 +7,18 @@ import {
   LEVEL_COLOR,
   LEVEL_LABEL_TR,
   lotsGeoJSON,
+  placeValueText,
   type PlaceView,
   roadsGeoJSON,
 } from "@campus-live/client";
-import { Camera, GeoJSONSource, Layer, Map as MapView } from "@maplibre/maplibre-react-native";
-import { useEffect, useState } from "react";
+import {
+  Camera,
+  type CameraRef,
+  GeoJSONSource,
+  Layer,
+  Map as MapView,
+} from "@maplibre/maplibre-react-native";
+import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,6 +26,7 @@ import { API_URL } from "@/constants/api";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLivePlaces } from "@/hooks/use-live-places";
 import { useMapStyle } from "@/hooks/use-map-style";
+import { useSharedLocation } from "@/hooks/use-shared-location";
 
 // The web map's layers (apps/web/src/components/LiveMap.tsx): keep the two in step.
 // The heat ramp, low to high, also drawn as the legend's steps.
@@ -48,6 +56,8 @@ function boundsOf(places: PlaceView[]): [number, number, number, number] {
  */
 export default function MapScreen() {
   const { campus, places, cells, connected, error } = useLivePlaces();
+  const { me, setMe, picking, setPicking, focusId, setFocusId } = useSharedLocation();
+  const camera = useRef<CameraRef>(null);
   const dark = useColorScheme() === "dark";
   const mapStyle = useMapStyle(dark);
   const [mode, setMode] = useState<"3d" | "2d">("3d");
@@ -59,6 +69,17 @@ export default function MapScreen() {
       if (reduce) setMode("2d");
     });
   }, []);
+  // The view goes to the user's new position.
+  useEffect(() => {
+    if (me) camera.current?.flyTo({ center: [me.lng, me.lat], zoom: 16, duration: still ? 0 : 800 });
+  }, [me, still]);
+  // A chip in the Asistan tab: the view goes to that place, and a card names it.
+  const focused = places.find((place) => place.id === focusId) ?? null;
+  const focusedPoint = focused ? labelsGeoJSON([focused]).features[0].geometry.coordinates : null;
+  useEffect(() => {
+    if (focusedPoint) camera.current?.flyTo({ center: focusedPoint, zoom: 17, duration: still ? 0 : 800 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fly once per chip, not on every snapshot
+  }, [focusId, focused !== null, still]);
   const problem = apiUrlProblem(API_URL, Platform.OS);
   const demo = places.some((place) => !place.stale && place.demo);
   const ink = dark
@@ -104,8 +125,21 @@ export default function MapScreen() {
       )}
       {places.length && mapStyle ? (
         <View style={styles.map}>
-          <MapView style={styles.map} mapStyle={mapStyle} logo={false} compass={false}>
+          <MapView
+            style={styles.map}
+            mapStyle={mapStyle}
+            logo={false}
+            compass={false}
+            onPress={(event) => {
+              // While picking, a tap anywhere is the user's position.
+              if (!picking) return;
+              const [lng, lat] = event.nativeEvent.lngLat;
+              setMe({ lat, lng, source: "map" });
+              setPicking(false);
+            }}
+          >
             <Camera
+              ref={camera}
               initialViewState={{
                 bounds: boundsOf(places),
                 padding: { top: 40, right: 40, bottom: 40, left: 40 },
@@ -234,7 +268,64 @@ export default function MapScreen() {
                 paint={{ "text-color": ink.text, "text-halo-color": ink.halo, "text-halo-width": 1.5 }}
               />
             </GeoJSONSource>
+            {/* The user's dot, on top of everything: drawn here, never sent beyond our API. */}
+            <GeoJSONSource
+              id="me"
+              data={
+                me
+                  ? {
+                      type: "Feature",
+                      geometry: { type: "Point", coordinates: [me.lng, me.lat] },
+                      properties: {},
+                    }
+                  : { type: "FeatureCollection", features: [] }
+              }
+            >
+              <Layer
+                id="me-halo"
+                type="circle"
+                paint={{ "circle-radius": 16, "circle-color": "#2563eb", "circle-opacity": 0.18 }}
+              />
+              <Layer
+                id="me-dot"
+                type="circle"
+                paint={{
+                  "circle-radius": 7,
+                  "circle-color": "#2563eb",
+                  "circle-stroke-color": "#ffffff",
+                  "circle-stroke-width": 2.5,
+                }}
+              />
+            </GeoJSONSource>
           </MapView>
+          {picking && (
+            <View style={styles.pickBanner}>
+              <Text style={styles.pickBannerText}>Konumunu seçmek için haritaya dokun</Text>
+              <Pressable onPress={() => setPicking(false)} accessibilityRole="button">
+                <Text style={styles.pickBannerCancel}>Vazgeç</Text>
+              </Pressable>
+            </View>
+          )}
+          {focused && (
+            <View style={styles.card}>
+              <View style={styles.cardText}>
+                <Text style={styles.cardName} numberOfLines={1}>
+                  {focused.name}
+                </Text>
+                <Text style={styles.cardValue}>
+                  {placeValueText(focused)}
+                  {!focused.stale && focused.demo ? " · demo verisi" : ""}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setFocusId(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Kapat"
+              >
+                <Text style={styles.cardClose}>✕</Text>
+              </Pressable>
+            </View>
+          )}
           <View style={styles.modes} accessibilityRole="radiogroup" accessibilityLabel="Harita görünümü">
             {(["3d", "2d"] as const).map((option) => (
               <Pressable
@@ -260,6 +351,38 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  pickBanner: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: "#1d4ed8",
+  },
+  pickBannerText: { color: "#ffffff", fontWeight: "600", flexShrink: 1 },
+  pickBannerCancel: { color: "#ffffff", textDecorationLine: "underline" },
+  card: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+  },
+  cardText: { flex: 1 },
+  cardName: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
+  cardValue: { fontSize: 13, color: "#334155" },
+  cardClose: { fontSize: 18, color: "#334155", paddingHorizontal: 6 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12 },
   title: { fontSize: 22, fontWeight: "700" },
   status: { fontSize: 13 },
