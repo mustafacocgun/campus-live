@@ -69,8 +69,8 @@ def build(tmp_path, extra: tuple[dict, ...] = ()):
         "name": "Test önü",
         "section": "Fakülteler",
         "kind": "crowd",
-        "latitude": at(0, 0)["lat"],
-        "longitude": at(0, 0)["lon"],
+        "latitude": at(7, 4)["lat"],
+        "longitude": at(7, 4)["lon"],
         "heading": 0,
         "fovDeg": 70,
         "rangeM": 30,
@@ -178,3 +178,18 @@ def test_the_build_stops_when_a_lot_would_take_a_camera_id(tmp_path) -> None:
     with pytest.raises(subprocess.CalledProcessError) as failed:
         build(tmp_path, (lot,))
     assert b"place ids equal to camera ids: ['test-fakultesi-otoparki']" in failed.value.stderr
+
+
+def test_an_area_label_does_not_point_at_its_camera(tmp_path) -> None:
+    # At the camera's view centre (half its range ahead of it), a label and the heat's heading would give
+    # the camera's spot away (D19): area labels sit on a coarse 30 m grid instead.
+    places, cameras, _ = build(tmp_path)
+    spots = {(camera["longitude"], camera["latitude"]) for camera in cameras}
+    areas = [place for place in places["places"] if place["kind"] == "area"]
+    assert areas
+    for area in areas:
+        lng, lat = area["geometry"]["coordinates"]
+        east = (lng - LNG0) * 111_320 * math.cos(math.radians(LAT0))
+        north = (lat - LAT0) * 111_320
+        assert abs(east / 30 - round(east / 30)) < 0.02 and abs(north / 30 - round(north / 30)) < 0.02, area
+        assert (lng, lat) not in spots, area

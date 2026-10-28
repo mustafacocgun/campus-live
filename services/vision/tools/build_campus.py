@@ -9,6 +9,9 @@ cameras); every SAÜ parking lot; the campus roads, clipped to the outline. Neve
 lots, never where people live or sleep (CLAUDE.md §3.2). The hand-placed outdoor crowd cameras already
 in config/cameras.json are kept, each feeding an area. Everything is a placeholder until the team
 confirms it (§0.5). Map data © OpenStreetMap contributors, ODbL.
+
+The generated camera spots follow fixed rules on public shapes, so anyone with this file can work them
+out: demo placeholders only. Real camera spots are entered by hand, never generated (D19).
 """
 
 import argparse
@@ -22,6 +25,8 @@ ROOT = Path(__file__).resolve().parents[3]
 CAMPUS_WAY = 216324005  # "Sakarya Üniversitesi", amenity=university
 LAT0 = 40.742
 KX, KY = 111_320 * math.cos(math.radians(LAT0)), 111_320  # metres per degree of longitude, latitude
+# Where an outdoor area's name goes: on this grid (metres), never at a camera's view centre.
+LABEL_GRID_M = 30
 
 # Not ours, or not a place for a camera: SUBÜ shares the outline; people live or sleep in the dormitory
 # and the hotel; nobody gathers in the heating plant, the print house, labs or company offices.
@@ -230,7 +235,10 @@ def build(osm: dict, outdoor: list[dict]) -> tuple[dict, list[dict]]:
             )
             for (x, y), c in zip(views, members, strict=True)
         ]
-        label = (sum(p[0] for p in centres) / len(centres), sum(p[1] for p in centres) / len(centres))
+        middle = (sum(p[0] for p in centres) / len(centres), sum(p[1] for p in centres) / len(centres))
+        # On a coarse grid: at the view centre itself (half the range ahead of the camera), the label and
+        # the heat's heading would give the camera's spot away (D19).
+        label = tuple(round(v / LABEL_GRID_M) * LABEL_GRID_M for v in middle)
         places.append(
             {
                 "id": place_id,

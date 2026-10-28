@@ -92,7 +92,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.332657, 40.741533]
+        "coordinates": [30.332711, 40.741461]
       }
     },
     {
@@ -102,7 +102,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.331646, 40.741548]
+        "coordinates": [30.331644, 40.741461]
       }
     },
     {
@@ -112,7 +112,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.332807, 40.742135]
+        "coordinates": [30.332711, 40.742269]
       }
     },
     {
@@ -122,7 +122,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.33182, 40.742205]
+        "coordinates": [30.331644, 40.742269]
       }
     },
     {
@@ -132,7 +132,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.333129, 40.742931]
+        "coordinates": [30.333067, 40.742808]
       }
     },
     {
@@ -142,7 +142,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.333645, 40.743345]
+        "coordinates": [30.333778, 40.743347]
       }
     },
     {
@@ -152,7 +152,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.330971, 40.744076]
+        "coordinates": [30.330933, 40.744156]
       }
     },
     {
@@ -162,7 +162,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.33079, 40.743922]
+        "coordinates": [30.330933, 40.743886]
       }
     },
     {
@@ -172,7 +172,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.330916, 40.742259]
+        "coordinates": [30.330933, 40.742269]
       }
     },
     {
@@ -182,7 +182,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.326464, 40.742062]
+        "coordinates": [30.326309, 40.742]
       }
     },
     {
@@ -192,7 +192,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.329752, 40.744452]
+        "coordinates": [30.329866, 40.744425]
       }
     },
     {
@@ -202,7 +202,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.332962, 40.741292]
+        "coordinates": [30.333067, 40.741192]
       }
     },
     {
@@ -212,7 +212,7 @@
       "kind": "area",
       "geometry": {
         "type": "Point",
-        "coordinates": [30.329346, 40.741049]
+        "coordinates": [30.32951, 40.740922]
       }
     },
     {

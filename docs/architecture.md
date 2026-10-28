@@ -52,6 +52,7 @@ web / mobile: the heat glides between snapshots; buildings, lots and roads take 
 
 - Views of an outdoor area can overlap, so its count is the busiest camera's, never the sum; rooms and floors of a building differ, so they add up. A place's level is the highest among its fresh cameras; with none, it is stale ("Görüntü yok").
 - Place geometry is © OpenStreetMap contributors (ODbL). Places and cameras are **placeholders** until the team confirms them (CLAUDE.md §0.5). Nothing is placed on SUBÜ's buildings, and no indoor camera where people live or sleep.
+- **Generated camera spots can be worked out by anyone with the code.** Indoor, parking and traffic cameras come from fixed rules on the public shapes (inside a footprint, a lot's far corner, points along a road), so `tools/build_campus.py` recomputes them. That is fine for demo placeholders only: real camera spots are entered by hand and never generated (D19). An outdoor area's label sits on a 30 m grid, not at its camera's view centre, which would point back at the camera.
 - **Outdoor projection:** a camera's pose (`heading`, `fovDeg`, `rangeM`) gives an estimated image→ground homography: the bottom of the image is 5 m away, the top is `rangeM` away. The WILDTRACK plaza views can use the dataset's own calibration instead (`services/vision/README.md`).
 - **Residual risk:** over hours, where heat appears outlines what cameras cover. Coarser or thresholded cells reduce it (#24, the team's call).
 
