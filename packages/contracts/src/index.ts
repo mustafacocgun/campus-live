@@ -155,13 +155,34 @@ export const LiveSnapshot = z.object({
 });
 export type LiveSnapshot = z.infer<typeof LiveSnapshot>;
 
-export const AssistantRequest = z.object({ message: z.string().trim().min(1).max(500) });
+/** A position on the map: the user's, from the device or picked on the map. */
+export const LatLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+export type LatLng = z.infer<typeof LatLng>;
+
+export const AssistantRequest = z.object({
+  message: z.string().trim().min(1).max(500),
+  /**
+   * Where the user is, for "the nearest…" questions. The API measures from it and gives the LLM only
+   * the top places with rounded distances; it never stores, logs or forwards the position.
+   */
+  location: LatLng.optional(),
+});
 export type AssistantRequest = z.infer<typeof AssistantRequest>;
+
+/** A place an answer is about, for the screen to point at; metres from the user, when known. */
+export const AnswerPlace = z.object({
+  id: z.string(),
+  name: z.string(),
+  metres: z.number().int().nonnegative().nullable(),
+});
+export type AnswerPlace = z.infer<typeof AnswerPlace>;
 
 export const AssistantResponse = z.object({
   answer: z.string(),
   /** "fallback" when the rule-based answer was used instead of the LLM. */
   via: z.enum(["llm", "fallback"]),
+  /** For "nearest" and "where" questions: the places, nearest first. */
+  places: z.array(AnswerPlace).optional(),
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
 

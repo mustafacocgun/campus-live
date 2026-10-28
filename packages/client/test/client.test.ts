@@ -63,3 +63,24 @@ describe("askAssistant errors (#11)", () => {
     await expect(askAssistant("http://api", "soru")).resolves.toEqual(data);
   });
 });
+
+describe("askAssistant with a location", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("sends the position only when there is one", async () => {
+    const bodies: unknown[] = [];
+    vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)));
+      return new Response(JSON.stringify({ success: true, data: { answer: "x", via: "fallback" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    await askAssistant("http://api", "En yakın otopark?", { lat: 40.742, lng: 30.332 });
+    await askAssistant("http://api", "Kütüphane kalabalık mı?");
+    expect(bodies).toEqual([
+      { message: "En yakın otopark?", location: { lat: 40.742, lng: 30.332 } },
+      { message: "Kütüphane kalabalık mı?" },
+    ]);
+  });
+});

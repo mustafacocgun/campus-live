@@ -56,6 +56,23 @@ export function PlaceIcon({
   return <StrokeIcon d={iconPathFor(place)} className={className} />;
 }
 
+/** A crosshair: "use my location". */
+export function LocateIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <StrokeIcon d="M12 2v3M12 19v3M2 12h3M19 12h3M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" className={className} />
+  );
+}
+
+/** A map pin: a place an answer points at. */
+export function PinIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <StrokeIcon
+      d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+      className={className}
+    />
+  );
+}
+
 /** A map pin with a live dot: the Campus Live mark. */
 export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
   return (

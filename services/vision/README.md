@@ -68,7 +68,9 @@ camera where people live or sleep.
 - **Crowd, indoors** (`"indoor": true` in `config/cameras.json`): a count only, which lights up the whole
   building. Only where people study, eat or work: never where they live or sleep.
 - **Parking:** vehicles (car, motorcycle, bus, truck) against the lot's outlined slots; a slot is taken
-  when a vehicle's box covers at least 40 % of it, smoothed per slot. Sends free/total.
+  when a vehicle's box covers at least 40 % of it, smoothed per slot. Sends free/total. YOLO runs at
+  1280 px for parking (`IMAGE_SIZE` in `service.py`): at the default 640 px it missed most parked cars
+  (#50).
 - **Traffic:** vehicles in the camera's `zone` (the road), smoothed; the level comes from `thresholds`.
 
 ## Outline a parking clip's slots

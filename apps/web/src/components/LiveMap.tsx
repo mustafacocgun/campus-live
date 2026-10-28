@@ -11,7 +11,7 @@ import {
   type PlaceView,
   roadsGeoJSON,
 } from "@campus-live/client";
-import type { CampusMap, DensityCell } from "@campus-live/contracts";
+import type { CampusMap, DensityCell, LatLng } from "@campus-live/contracts";
 import {
   type GeoJSONSource,
   getVersion,
@@ -109,12 +109,20 @@ export default function LiveMap({
   cells,
   selectedId,
   onSelect,
+  me = null,
+  picking = false,
+  onPick,
 }: {
   campus: CampusMap["campus"] | null;
   places: PlaceView[];
   cells: DensityCell[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** The user's position, from the device or picked on the map: drawn as a dot, never sent anywhere. */
+  me?: LatLng | null;
+  /** While true, a tap on the map sets the user's position instead of selecting a place. */
+  picking?: boolean;
+  onPick?: (spot: LatLng) => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -123,6 +131,8 @@ export default function LiveMap({
   const heights = useRef(new Map<string, number>());
   const shown = useRef<DensityCell[]>([]);
   const select = useRef(onSelect);
+  const pick = useRef({ picking, onPick });
+  const meRef = useRef(me);
   const [mode, setMode] = useState<"3d" | "2d">("3d");
   const modeRef = useRef(mode);
   // A map that cannot load (no WebGL, the basemap unreachable) says so instead of staying blank.
@@ -133,7 +143,9 @@ export default function LiveMap({
   useEffect(() => {
     latest.current = { places, selectedId, campus };
     select.current = onSelect;
-  }, [places, selectedId, campus, onSelect]);
+    pick.current = { picking, onPick };
+    meRef.current = me;
+  }, [places, selectedId, campus, onSelect, picking, onPick, me]);
 
   useEffect(() => {
     const media = window.matchMedia(DARK);
@@ -330,6 +342,34 @@ export default function LiveMap({
         },
         paint: { "text-color": colors.text, "text-halo-color": colors.halo, "text-halo-width": 1.5 },
       });
+      const spot = meRef.current;
+      target.addSource("me", {
+        type: "geojson",
+        data: spot
+          ? {
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [spot.lng, spot.lat] },
+              properties: {},
+            }
+          : EMPTY,
+      });
+      target.addLayer({
+        id: "me-halo",
+        type: "circle",
+        source: "me",
+        paint: { "circle-radius": 16, "circle-color": "#2563eb", "circle-opacity": 0.18 },
+      });
+      target.addLayer({
+        id: "me-dot",
+        type: "circle",
+        source: "me",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "#2563eb",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2.5,
+        },
+      });
       // The base map's own 3D buildings follow the mode too.
       if (lit) target.setLayoutProperty(lit, "visibility", modeRef.current === "3d" ? "visible" : "none");
     };
@@ -382,11 +422,18 @@ export default function LiveMap({
         // Every style load (the first, and each theme change) starts without our layers.
         created.on("style.load", () => layersFor(created, media.matches));
         created.on("click", CLICKABLE, (event) => {
+          if (pick.current.picking) return;
           const id = event.features?.[0]?.properties?.id;
           if (typeof id === "string") select.current(id);
         });
-        created.on("mouseenter", CLICKABLE, () => (created.getCanvas().style.cursor = "pointer"));
-        created.on("mouseleave", CLICKABLE, () => (created.getCanvas().style.cursor = ""));
+        // While picking, a tap anywhere is the user's position.
+        created.on("click", (event) => {
+          if (pick.current.picking) pick.current.onPick?.({ lat: event.lngLat.lat, lng: event.lngLat.lng });
+        });
+        const cursor = (over: boolean) =>
+          (created.getCanvas().style.cursor = pick.current.picking ? "crosshair" : over ? "pointer" : "");
+        created.on("mouseenter", CLICKABLE, () => cursor(true));
+        created.on("mouseleave", CLICKABLE, () => cursor(false));
         // Once tiles are on screen, lit buildings take the basemap's heights.
         created.on("idle", () => {
           if (modeRef.current !== "3d" || created.getZoom() < 14) return;
@@ -446,6 +493,29 @@ export default function LiveMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refit only when the outline itself changes
   }, [outlineKey, loaded]);
 
+  // The user's dot follows their position, and the view goes to it when it changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    (map.getSource("me") as GeoJSONSource | undefined)?.setData(
+      me
+        ? { type: "Feature", geometry: { type: "Point", coordinates: [me.lng, me.lat] }, properties: {} }
+        : EMPTY,
+    );
+    if (me)
+      map.easeTo({
+        center: [me.lng, me.lat],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: reducedMotion() ? 0 : 600,
+      });
+  }, [me, loaded]);
+
+  // While picking, the cursor says so.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map) map.getCanvas().style.cursor = picking ? "crosshair" : "";
+  }, [picking, loaded]);
+
   // Brings the selected place into view when the selection changes.
   useEffect(() => {
     const map = mapRef.current;
@@ -495,6 +565,11 @@ export default function LiveMap({
       <div className="absolute inset-0">
         <div ref={container} className="h-full w-full" />
       </div>
+      {picking && (
+        <p className="pointer-events-none absolute top-3 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-accent-foreground shadow-lg">
+          Konumunu seçmek için haritada bir yere dokun
+        </p>
+      )}
       <div
         role="group"
         aria-label="Harita görünümü"

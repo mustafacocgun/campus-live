@@ -1,4 +1,6 @@
 import math
+import sys
+import types
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -9,6 +11,21 @@ VISION_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = VISION_DIR.parents[1]
 EXAMPLE_CAMERAS = VISION_DIR / "configs" / "cameras.example.yaml"
 NOW = datetime(2026, 10, 27, 7, 0, tzinfo=UTC)
+
+
+def fake_yolo(monkeypatch) -> list[dict]:
+    """Stands in for Ultralytics, no GPU needed: records the keyword arguments of every model call."""
+    calls: list[dict] = []
+
+    def model(frame, **kwargs):
+        calls.append(kwargs)
+        return [None]
+
+    fake_ultralytics = types.ModuleType("ultralytics")
+    fake_ultralytics.YOLO = lambda weights: model
+    monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
+    monkeypatch.setattr(sv.Detections, "from_ultralytics", staticmethod(lambda result: sv.Detections.empty()))
+    return calls
 
 
 def people(*boxes: list[float]) -> sv.Detections:

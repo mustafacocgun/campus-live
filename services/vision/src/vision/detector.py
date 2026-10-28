@@ -17,7 +17,7 @@ _LOAD = threading.Lock()
 
 
 class YoloDetector:
-    def __init__(self, classes: list[int], weights: Path = WEIGHTS) -> None:
+    def __init__(self, classes: list[int], weights: Path = WEIGHTS, imgsz: int | None = None) -> None:
         # Turns off Ultralytics' usage analytics; it must be set before the import. Downloads still work.
         # "true", not "1": Ultralytics 8.3.x only reads "true".
         os.environ.setdefault("YOLO_OFFLINE", "true")
@@ -27,9 +27,11 @@ class YoloDetector:
         with _LOAD:
             self._model = YOLO(str(weights))
         self._classes = classes
+        # The input size YOLO scales each frame to; None keeps Ultralytics' default (640).
+        self._size = {"imgsz": imgsz} if imgsz else {}
 
     def __call__(self, frame: np.ndarray) -> sv.Detections:
-        result = self._model(frame, classes=self._classes, verbose=False)[0]
+        result = self._model(frame, classes=self._classes, verbose=False, **self._size)[0]
         return sv.Detections.from_ultralytics(result)
 
 
@@ -60,8 +62,8 @@ class TestBoxesDetector:
 
     __test__ = False  # not a pytest class
 
-    def __init__(self, classes: list[int]) -> None:
-        self._classes = classes
+    def __init__(self, classes: list[int], imgsz: int | None = None) -> None:
+        self._classes = classes  # imgsz: accepted like YoloDetector's, and not needed here
 
     def __call__(self, frame: np.ndarray) -> sv.Detections:
         detections = detect_test_boxes(frame)
