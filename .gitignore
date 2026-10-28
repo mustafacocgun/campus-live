@@ -32,6 +32,9 @@ services/vision/datasets/
 # MapLibre's worker, copied from node_modules before dev and build
 apps/web/public/maplibre-gl-worker.mjs
 services/vision/configs/cameras.yaml
+# Parts of it for more than one vision process (cameras.part1.yaml, ...)
+services/vision/configs/cameras.*.yaml
+!services/vision/configs/cameras.example.yaml
 services/vision/models/*
 !services/vision/models/.gitkeep
 *.pt
