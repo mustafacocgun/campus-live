@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from conftest import NOW, synthetic_camera, synthetic_pixels, write_clip, write_wildtrack
+from conftest import NOW, fake_yolo, synthetic_camera, synthetic_pixels, write_clip, write_wildtrack
 from vision.cameras import CameraConfig, load_cameras
 from vision.config import Settings
 from vision.registry import load_registry
@@ -120,7 +120,7 @@ def _registered(camera_id: str, kind: str, place: str, indoor: bool = False) -> 
     }
 
 
-def test_each_kind_of_camera_gets_its_analyzer_and_classes(tmp_path) -> None:
+def _one_camera_of_each_kind(tmp_path) -> tuple[list[CameraConfig], dict]:
     registry_file = tmp_path / "registry.json"
     registry_file.write_text(
         json.dumps(
@@ -143,8 +143,12 @@ def test_each_kind_of_camera_gets_its_analyzer_and_classes(tmp_path) -> None:
         " slots: [[[0.1, 0.5], [0.4, 0.5], [0.4, 0.9], [0.1, 0.9]]]}\n"
         f"  - {{id: yol-1, kind: traffic, source: a.avi, {THRESHOLDS}}}\n"
     )
+    return load_cameras(config), load_registry(registry_file)
+
+
+def test_each_kind_of_camera_gets_its_analyzer_and_classes(tmp_path) -> None:
     workers = build_workers(
-        Settings(_env_file=None, detector="test-boxes"), load_cameras(config), load_registry(registry_file)
+        Settings(_env_file=None, detector="test-boxes"), *_one_camera_of_each_kind(tmp_path)
     )
     frame = np.zeros((100, 100, 3), dtype=np.uint8)
     frame[50:90, 10:20] = 255  # a person
@@ -161,3 +165,14 @@ def test_each_kind_of_camera_gets_its_analyzer_and_classes(tmp_path) -> None:
     assert readings["muh-ic"].cells is None  # indoors: counts only
     assert (readings["otopark-1"].kind, readings["otopark-1"].parking.total) == ("parking", 1)
     assert (readings["yol-1"].kind, readings["yol-1"].count) == ("traffic", 1)
+
+
+def test_parking_cameras_detect_at_1280_px(monkeypatch, tmp_path) -> None:
+    # At 640 px YOLO misses most parked cars; at 1280 two of three PKLot lots match the labels (#50).
+    calls = fake_yolo(monkeypatch)
+    workers = build_workers(Settings(_env_file=None, detector="yolo"), *_one_camera_of_each_kind(tmp_path))
+    sizes = {}
+    for worker in workers:
+        worker.detector_factory()(np.zeros((72, 128, 3), dtype=np.uint8))
+        sizes[worker.camera.id] = calls[-1].get("imgsz")
+    assert sizes == {"meydan": None, "muh-ic": None, "otopark-1": 1280, "yol-1": None}
