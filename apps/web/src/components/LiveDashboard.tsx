@@ -17,7 +17,7 @@ const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
 
 // The heat layer's ramp (LiveMap's heatmap-color), as a CSS gradient for the legend.
 const HEAT_RAMP =
-  "linear-gradient(to right, rgba(37,99,235,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
+  "linear-gradient(to right, rgba(217,70,239,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
 
 export function LiveDashboard() {
   const { campus, places, cells, connected, error, history } = useLivePlaces();
@@ -116,7 +116,7 @@ export function LiveDashboard() {
           <SummaryStrip places={places} />
           <div
             ref={mapBox}
-            className="relative h-[60vh] scroll-mt-4 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm lg:h-auto lg:min-h-0 lg:flex-1"
+            className="map-frame relative h-[60vh] scroll-mt-4 overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1"
           >
             <LiveMap
               campus={campus}

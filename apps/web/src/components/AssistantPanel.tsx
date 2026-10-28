@@ -78,7 +78,7 @@ export function AssistantPanel() {
                   key={suggestion}
                   type="button"
                   onClick={() => void ask(suggestion)}
-                  className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium transition hover:border-accent hover:text-accent"
+                  className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium transition hover:border-accent hover:text-accent-text"
                 >
                   {suggestion}
                 </button>
