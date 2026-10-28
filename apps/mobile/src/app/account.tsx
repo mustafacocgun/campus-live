@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -40,10 +39,9 @@ export default function AccountScreen() {
   const card = [styles.card, { backgroundColor: c.card, borderColor: c.line }, cardShadow(c)];
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={[styles.screen, { backgroundColor: c.panel }]}
-    >
+    // "padding" on Android too: the app is edge to edge, so the window no longer shrinks for the
+    // keyboard and the sign-in fields would stay under it.
+    <KeyboardAvoidingView behavior="padding" style={[styles.screen, { backgroundColor: c.panel }]}>
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {account.status === "loading" ? (

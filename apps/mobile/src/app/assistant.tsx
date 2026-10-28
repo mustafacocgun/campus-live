@@ -3,6 +3,7 @@ import type { AnswerPlace, CameraKind } from "@campus-live/contracts";
 import { type ComponentRef, type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -81,6 +82,12 @@ export default function AssistantScreen() {
     log.current?.scrollToEnd({ animated: true });
   }, [turns, busy]);
 
+  // The keyboard shrinks the conversation: the latest answer stays in view while typing.
+  useEffect(() => {
+    const shown = Keyboard.addListener("keyboardDidShow", () => log.current?.scrollToEnd({ animated: true }));
+    return () => shown.remove();
+  }, []);
+
   async function ask(text: string) {
     const asked = text.trim();
     if (!asked || busy || problem) return;
@@ -142,10 +149,9 @@ export default function AssistantScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={[styles.screen, { backgroundColor: c.panel }]}
-    >
+    // "padding" on Android too: the app is edge to edge, so the window no longer shrinks for the
+    // keyboard and the input would stay under it.
+    <KeyboardAvoidingView behavior="padding" style={[styles.screen, { backgroundColor: c.panel }]}>
       <AppHeader />
       <View style={[styles.panel, { backgroundColor: c.card, borderColor: c.line }, cardShadow(c)]}>
         {/* The assistant's own header: the one navy surface on the screen, so it reads as the feature. */}
