@@ -166,7 +166,16 @@ try {
   const lots = snapshot.places.filter((place) => kindOf.get(place.id) === "parking");
   if (!lots.length || !lots.every((place) => place.parking?.total > 0))
     throw new Error("a parking lot has no slots");
-  console.log(`ok: ${lots.length} parking lots report free/total`);
+  // The test clips park yellow cars in slots and drive them along roads: zero everywhere would mean
+  // the vehicle detection or the analyzers see nothing.
+  const taken = lots.reduce((sum, place) => sum + place.parking.total - place.parking.free, 0);
+  const roads = snapshot.places.filter((place) => kindOf.get(place.id) === "road");
+  const vehicles = roads.reduce((sum, place) => sum + (place.count ?? 0), 0);
+  if (!taken || !vehicles)
+    throw new Error(`no cars seen: ${taken} slots taken, ${vehicles} vehicles on roads`);
+  console.log(
+    `ok: ${lots.length} parking lots report free/total, ${taken} slots taken; ${roads.length} roads count ${vehicles} vehicles`,
+  );
   // The heat must land where outdoor cameras look: the service's pose wiring and map offsets are checked
   // here. The heat no longer says which camera a cell came from, so each cell must lie in the cone of
   // some outdoor camera; indoor cameras send none. The projection's own geometry is not checked (the
