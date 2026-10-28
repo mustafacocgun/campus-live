@@ -41,8 +41,10 @@ export function LiveDashboard() {
   // The user's position, for "the nearest…" questions: kept in this page only.
   const [me, setMe] = useState<MyLocation | null>(null);
   const [picking, setPicking] = useState(false);
-  // The assistant can take the whole side panel; the place list then folds into one bar.
-  const [aiWide, setAiWide] = useState(false);
+  // The assistant can take the whole side panel (the place list then folds into one bar), or fold
+  // down to its header (the place list then reaches the bottom).
+  const [aiSize, setAiSize] = useState<"normal" | "wide" | "min">("normal");
+  const aiWide = aiSize === "wide";
   const panel = useRef<HTMLElement>(null);
   const demo = places.some((place) => !place.stale && place.demo);
   const visible = places.filter(
@@ -91,8 +93,8 @@ export function LiveDashboard() {
   function showPlace(id: string) {
     setTopic(null);
     setSection(null);
-    // Its detail needs the room: the assistant goes back to its usual size.
-    setAiWide(false);
+    // Its detail needs the room: a widened assistant goes back to its usual size.
+    setAiSize((size) => (size === "wide" ? "normal" : size));
     select(id);
   }
 
@@ -194,11 +196,11 @@ export function LiveDashboard() {
 
           {/* The places: the list, or one place's detail. On a wide screen they share the height with the
               assistant, which gets the larger part, and scroll on their own. With the assistant widened
-              they fold into one bar that brings them back. */}
+              they fold into one bar that brings them back; with it folded they reach the bottom. */}
           {aiWide && (
             <button
               type="button"
-              onClick={() => setAiWide(false)}
+              onClick={() => setAiSize("normal")}
               className="hidden items-center justify-between gap-2 border-b border-line px-4 py-2.5 text-sm font-semibold transition hover:bg-surface lg:flex"
             >
               <span>
@@ -209,7 +211,9 @@ export function LiveDashboard() {
           )}
           <section
             aria-label="Yerler"
-            className={`flex flex-col lg:min-h-0 lg:flex-[3] ${aiWide ? "lg:hidden" : ""}`}
+            className={`flex flex-col lg:min-h-0 ${
+              aiWide ? "lg:hidden" : aiSize === "min" ? "lg:flex-1" : "lg:flex-[3]"
+            }`}
           >
             {selected ? (
               <div className="p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
@@ -268,8 +272,10 @@ export function LiveDashboard() {
           {/* The campus assistant, always in view and the larger part of the side panel. */}
           <section
             aria-label="Kampüs asistanı"
-            className={`flex h-[600px] flex-col border-t border-line p-3 lg:h-auto lg:min-h-[320px] ${
-              aiWide ? "lg:flex-1" : "lg:flex-[2]"
+            className={`flex flex-col border-t border-line p-3 ${
+              aiSize === "min"
+                ? ""
+                : `h-[600px] lg:h-auto lg:min-h-[320px] ${aiWide ? "lg:flex-1" : "lg:flex-[2]"}`
             }`}
           >
             <AssistantPanel
@@ -282,7 +288,9 @@ export function LiveDashboard() {
               onPicking={setPicking}
               onShowPlace={showPlace}
               expanded={aiWide}
-              onToggleExpand={() => setAiWide((wide) => !wide)}
+              onToggleExpand={() => setAiSize(aiWide ? "normal" : "wide")}
+              minimized={aiSize === "min"}
+              onToggleMinimize={() => setAiSize(aiSize === "min" ? "normal" : "min")}
             />
           </section>
 
