@@ -12,6 +12,20 @@ jobs:
   node:
     name: Node (contracts, client, api, web, mobile)
     runs-on: ubuntu-latest
+    # The API's account and alert tests run against a real Postgres (services/api/test/accounts.test.ts).
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: campus_live
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: campus_live_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U campus_live" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgres://campus_live:ci-only-password@localhost:5432/campus_live_test
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

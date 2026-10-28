@@ -16,7 +16,8 @@ export function attachLiveSocket(
   corsOrigins: string[],
   snapshotMs = SNAPSHOT_MS,
 ): Server {
-  const io = new Server(httpServer, { cors: { origin: corsOrigins } });
+  // Credentials: a signed-in browser's session cookie rides along, for its notifications (user-rooms.ts).
+  const io = new Server(httpServer, { cors: { origin: corsOrigins, credentials: true } });
   io.on("connection", (socket) => socket.emit(SOCKET_EVENTS.live, store.live(new Date())));
   const timer = setInterval(() => {
     if (io.engine.clientsCount) io.emit(SOCKET_EVENTS.live, store.live(new Date()));

@@ -1,0 +1,5 @@
+{
+  "_note": "PLACEHOLDERS (CLAUDE.md §0.5): how many people (crowd cameras) or vehicles (traffic cameras) one camera's view holds at once, used only for the alert percents, which the apps label 'tahmini'. A camera not listed under 'cameras' (by its id in config/cameras.json, including any added later) uses its kind's default. Parking cameras use the total slots their readings report. Private, like the camera registry: never served. Replace with the team's numbers once a hand count calibrates them.",
+  "defaultPerCamera": { "crowd": 40, "traffic": 20 },
+  "cameras": {}
+}

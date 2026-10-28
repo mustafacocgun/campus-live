@@ -32,13 +32,18 @@ export function FilterChips({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+      className={`flex items-center gap-2 rounded-xl border py-1.5 pr-3 pl-1.5 text-sm font-semibold transition ${
         active
-          ? "border-accent bg-accent text-accent-foreground shadow-lg shadow-accent/25"
+          ? "border-transparent bg-linear-to-r from-accent to-accent-2 text-accent-foreground shadow-lg shadow-accent/30"
           : "border-line bg-surface hover:border-accent/60"
       }`}
     >
-      {icon}
+      {/* The icon sits in its own tile, tinted while the chip is off and white-on-glass once on. */}
+      <span
+        className={`grid h-7 w-7 place-items-center rounded-lg ${active ? "bg-white/20" : "bg-accent/15 text-accent-text"}`}
+      >
+        {icon}
+      </span>
       {label}
     </button>
   );

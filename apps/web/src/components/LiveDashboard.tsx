@@ -5,6 +5,7 @@ import type { CameraKind } from "@campus-live/contracts";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { useLivePlaces } from "@/lib/use-live-places";
+import { AccountBar } from "./AccountBar";
 import { AssistantPanel } from "./AssistantPanel";
 import { FilterChips } from "./FilterChips";
 import { LogoMark } from "./icons";
@@ -17,7 +18,7 @@ const LiveMap = dynamic(() => import("./LiveMap"), { ssr: false });
 
 // The heat layer's ramp (LiveMap's heatmap-color), as a CSS gradient for the legend.
 const HEAT_RAMP =
-  "linear-gradient(to right, rgba(37,99,235,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
+  "linear-gradient(to right, rgba(217,70,239,0.45), rgba(16,185,129,0.6), rgba(250,204,21,0.75), rgba(249,115,22,0.85), rgba(220,38,38,0.9))";
 
 export function LiveDashboard() {
   const { campus, places, cells, connected, error, history } = useLivePlaces();
@@ -74,17 +75,20 @@ export function LiveDashboard() {
             <p className="text-sm text-muted">Kampüsün canlı haritası</p>
           </div>
         </div>
-        <span className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium">
-          <span className="relative flex h-2.5 w-2.5">
-            {connected && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
-            )}
-            <span
-              className={`relative inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-green-500" : "bg-gray-400"}`}
-            />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex h-10 items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm font-medium">
+            <span className="relative flex h-2.5 w-2.5">
+              {connected && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
+              )}
+              <span
+                className={`relative inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-green-500" : "bg-gray-400"}`}
+              />
+            </span>
+            {connected ? "Canlı bağlantı" : "Bağlantı yok"}
           </span>
-          {connected ? "Canlı bağlantı" : "Bağlantı yok"}
-        </span>
+          <AccountBar />
+        </div>
       </header>
       {error && (
         <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-700 dark:text-red-300">
@@ -116,7 +120,7 @@ export function LiveDashboard() {
           <SummaryStrip places={places} />
           <div
             ref={mapBox}
-            className="relative h-[60vh] scroll-mt-4 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm lg:h-auto lg:min-h-0 lg:flex-1"
+            className="map-frame relative h-[60vh] scroll-mt-4 overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1"
           >
             <LiveMap
               campus={campus}
