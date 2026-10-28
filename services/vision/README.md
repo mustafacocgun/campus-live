@@ -122,8 +122,8 @@ Each camera gets a random clip and start (`start_s`); `--seed` picks another dra
 4. Run it, open the map and move the `&plaza` anchor (`lat`, `lng`, `rotation_deg`) until the heat
    sits on the plaza.
 
-Check on first use, and correct `docs/data-sources.md`: the camera order (C1 = CVLab1 … C7 = IDIAP3)
-and the file formats come from public code, not from EPFL.
+The camera order (C1 = CVLab1 … C7 = IDIAP3), the file formats, the centimetre unit and the 2 fps
+frame rate were checked against the downloaded files on 2026-10-28 (`docs/data-sources.md`).
 
 ## Without footage or a GPU
 

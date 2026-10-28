@@ -6,27 +6,36 @@ never committed.
 
 ## In use
 
-| Clip / dataset         | Used by cameras     | Source                                                                                                                                                          | License                                                                                                                                                                                                                                                                                                                                                                                      | Shows                                                                                                                                                                                     | Checked by, date                                                                                     |
-| ---------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| WILDTRACK (EPFL CVLAB) | the 7 plaza cameras | https://www.epfl.ch/labs/cvlab/data/data-wildtrack/ (frames + calibration: `Wildtrack_dataset_full.zip`; videos: one Google Drive link per camera on that page) | "Unless explicitely distributed under a GPL licence, the data that can be dowloaded from this site should only be used for research and evaluation purposes. For any form of non GPL commercial usage, prior approval from EPFL should be obtained in writing." [EVIDENCED, CVLab data page https://www.epfl.ch/labs/cvlab/data/, 2026-10-27; the WILDTRACK page itself has no license text] | 7 GoPro cameras (1920×1080, 60 fps) with overlapping views of a pedestrian plaza in front of ETH Zurich's main building; OpenCV pinhole calibration (intrinsic + extrinsic); synchronized | Research + EPFL page read, 2026-10-27; **not downloaded yet** (whoever downloads re-checks the page) |
+| Clip / dataset         | Used by cameras     | Source                                                                                                                                                          | License                                                                                                                                                                                                                                                                                                                                                                                      | Shows                                                                                                                                                                                     | Checked by, date                                                                                    |
+| ---------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| WILDTRACK (EPFL CVLAB) | the 7 plaza cameras | https://www.epfl.ch/labs/cvlab/data/data-wildtrack/ (frames + calibration: `Wildtrack_dataset_full.zip`; videos: one Google Drive link per camera on that page) | "Unless explicitely distributed under a GPL licence, the data that can be dowloaded from this site should only be used for research and evaluation purposes. For any form of non GPL commercial usage, prior approval from EPFL should be obtained in writing." [EVIDENCED, CVLab data page https://www.epfl.ch/labs/cvlab/data/, 2026-10-27; the WILDTRACK page itself has no license text] | 7 GoPro cameras (1920×1080, 60 fps) with overlapping views of a pedestrian plaza in front of ETH Zurich's main building; OpenCV pinhole calibration (intrinsic + extrinsic); synchronized | Research + EPFL page read, 2026-10-27; zip downloaded and checked, license text re-read, 2026-10-28 |
 
 ### WILDTRACK: what the files are
 
-What the calibration loader (`services/vision/src/vision/calibration.py`) assumes, checked 2026-10-27 without
-downloading the dataset:
+What the calibration loader (`services/vision/src/vision/calibration.py`) assumes. Researched
+2026-10-27 without the dataset; checked against the downloaded `Wildtrack_dataset_full.zip` on
+2026-10-28 by projecting its annotations (9,518 person entries in 400 files) through each calibration:
 
-- **Frames, not the raw videos, go with the shipped calibration.** The zip holds frames "with removed
-  distortions" at 10 fps (the first 2000 frames; 400 of them annotated at 2 fps) [EVIDENCED, paper
-  arXiv 1707.09299]. `calibrations/intrinsic_zero/` belongs to those frames. The raw 60 fps videos need
-  `intrinsic_original`, reportedly available from EPFL on request [WEAK, OpenTraj's README].
+- **Frames, not the raw videos, go with the shipped calibration.** `Image_subsets/C1`..`C7` each hold
+  401 frames, `00000000.png` to `00002000.png` in steps of 5: the numbers count 10 fps frames, so the
+  subset is **2 fps**, about 200 s (`tools/frames_to_video.py ... --fps 2`) [EVIDENCED, file listing].
+  `annotations_positions/` has 400 files, `00000000.json` to `00001995.json`; frame `00002000` has none.
+  `calibrations/intrinsic_zero/` fits these frames: annotated ground positions land a median 2–16 px
+  from the annotated feet [EVIDENCED, projection]. The raw 60 fps videos go with
+  `calibrations/intrinsic_original/`, which the zip also holds [EVIDENCED, the zip's `README.txt`; not
+  tested].
 - **File formats:** `intr_<camera>.xml` holds OpenCV FileStorage matrices `camera_matrix` and
   `distortion_coefficients`; `extrinsic/extr_<camera>.xml` holds `<rvec>` and `<tvec>` as plain numbers
-  [EVIDENCED, the dataset's own toolkit, github.com/Chavdarova/WILDTRACK-toolkit].
-- **World unit:** centimetres for the calibration ("distances measured by hand in centimetres")
-  [EVIDENCED, paper]; the paper's annotation section says metres, a known inconsistency.
-- **Camera order** C1..C7 = CVLab1-4, IDIAP1-3 [WEAK, from MVDet's code]: check it against the files.
-- **Not verified:** whether the world's Z axis points up or down (the projection handles both) and the
-  exact frame file names. Whoever downloads the zip checks these and corrects this list.
+  [EVIDENCED, the loader reads all 7 cameras' files].
+- **World unit:** centimetres. Positions in centimetres land a median 2–16 px from the feet; in metres,
+  362–2,076 px [EVIDENCED, projection]. The annotations' `positionID` grid is in metres (README:
+  2.5 cm spacing, origin (-3.0, -9.0)), so multiply by 100.
+- **Camera order:** C1..C7 = CVLab1-4, IDIAP1-3 [EVIDENCED, two checks]. (1) Annotated view `viewNum`
+  v projects best through the v-th calibration: median 2–16 px, every other pairing 243 px or more.
+  (2) YOLO11n on 5 frames of folder Cn matches 33–71 % of view n-1's annotated boxes (IoU ≥ 0.5),
+  and at most 10 % of any other view's.
+- **Z axis points up:** a point 170 cm above the feet lands a median 9–30 px from the box top; 170 cm
+  below, 290–646 px [EVIDENCED, projection].
 
 ## Car footage: candidates for parking and traffic (license checked 2026-10-28, per clip at download)
 
@@ -53,6 +62,12 @@ Coverr clips (its license forbids use "as a dataset in any form"). Video dataset
 | OpenFreeMap public instance (style `liberty`, darkened in the apps for dark mode) | the web and phone maps | "completely free: there are no limits on the number of map views or requests. There's no registration, no user database, no API keys, and no cookies."; "Is commercial usage allowed? Yes."; "Attribution is required. If you are using MapLibre, they are automatically added" [EVIDENCED, openfreemap.org]; terms of service: provided "as-is," with no warranties | 2026-10-27 |
 
 Map data © OpenStreetMap contributors (ODbL), shown in the map's attribution.
+
+## Assistant LLM
+
+| Service                                                                         | Used by                           | Terms                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Checked    |
+| ------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Google Gemini API, free tier ("Unpaid Services"), model `gemini-3.5-flash-lite` | the API's assistant (server side) | "Google uses the content you submit to the Services and any generated responses to provide, improve, and develop Google products and services"; "human reviewers may read, annotate, and process your API input and output"; "Do not submit sensitive, confidential, or personal information to the Unpaid Services"; "You must be 18 years of age or older to use the APIs"; "You may use only Paid Services when making API Clients available to users in the European Economic Area, Switzerland, or the United Kingdom" [EVIDENCED, ai.google.dev/gemini-api/terms] | 2026-10-28 |
 
 ## Candidates for the other camera spots (license checked 2026-10-27, per clip at download)
 

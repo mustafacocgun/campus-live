@@ -164,9 +164,9 @@ decisions that are the team's · never claim an improvement you did not measure.
 | Contracts                      | zod 4 schemas + generated JSON Schema, `packages/contracts`                    | in repo |
 | Live state                     | in memory in the API (latest reading per camera; places and heat from it)      | in repo |
 | Footage                        | WILDTRACK + licensed stock clips, each in `docs/data-sources.md`               | in repo |
-| Accounts, place alerts         | Postgres (`pg`), school e-mail + password, nodemailer SMTP (D26–D30)           | in repo |
+| Accounts, place alerts         | Postgres (`pg`), school e-mail + password, nodemailer SMTP (D27–D31)           | in repo |
 | History, push alerts to phones | Postgres, push tokens                                                          | open    |
-| LLM provider                   | any OpenAI-compatible endpoint via `LLM_*` env                                 | open    |
+| LLM provider                   | Google AI Studio free tier, `gemini-3.5-flash-lite` (D26), via `LLM_*` env     | decided |
 | Parking and traffic analyzers  | outlined slots per clip; vehicles in a road zone                               | in repo |
 
 ```bash
