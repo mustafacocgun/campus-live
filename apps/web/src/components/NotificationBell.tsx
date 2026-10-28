@@ -36,17 +36,19 @@ export function NotificationBell({
         onClick={toggle}
         aria-expanded={open}
         aria-label={unread ? `Bildirimler: ${unread} okunmamış` : "Bildirimler"}
-        className="relative grid h-10 w-10 place-items-center rounded-full border border-line bg-surface transition hover:border-accent/60"
+        className={`relative grid h-9 w-9 place-items-center rounded-lg transition hover:bg-surface-2 hover:text-foreground ${
+          open ? "bg-surface-2 text-foreground" : "text-muted"
+        }`}
       >
-        <BellIcon />
+        <BellIcon className="h-[18px] w-[18px]" />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] leading-none font-bold text-accent-foreground ring-2 ring-background">
+          <span className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-600 px-1 text-[10px] leading-none font-bold text-white ring-2 ring-surface">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute top-12 right-0 z-[1100] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-2 shadow-2xl">
+        <div className="on-page absolute top-11 right-0 z-[1100] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-2 shadow-2xl">
           <h2 className="px-2 pt-1 pb-2 text-sm font-semibold">Bildirimler</h2>
           {notifications.length ? (
             <ul className="max-h-96 space-y-1 overflow-y-auto">

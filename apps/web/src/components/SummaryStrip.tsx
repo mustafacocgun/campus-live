@@ -1,13 +1,9 @@
-import { LEVEL_COLOR, PLACE_TOPIC, type PlaceView } from "@campus-live/client";
+import { LEVEL_COLOR, LEVEL_LABEL_TR, PLACE_TOPIC, type PlaceView } from "@campus-live/client";
 import type { CameraKind, Level } from "@campus-live/contracts";
 import type { ReactNode } from "react";
-import { inkOn } from "@/lib/ink";
-import { DemoBadge, LevelChip } from "./badges";
-import { KIND_LABEL_TR, KindIcon, PlaceIcon } from "./icons";
+import { KindIcon } from "./icons";
 
-const TOPICS: CameraKind[] = ["crowd", "parking", "traffic"];
 const LEVEL_ORDER: Level[] = ["low", "medium", "high"];
-const UNIT: Record<CameraKind, string> = { crowd: "kişi", parking: "boş", traffic: "araç" };
 
 type Fresh = PlaceView & { level: Level; count: number };
 
@@ -18,118 +14,116 @@ function freshPlaces(places: PlaceView[]): Fresh[] {
   );
 }
 
+const of = (places: Fresh[], topic: CameraKind) =>
+  places.filter((place) => PLACE_TOPIC[place.kind] === topic);
+
+function worst(places: Fresh[]): Level | null {
+  return places.length
+    ? LEVEL_ORDER[Math.max(...places.map((place) => LEVEL_ORDER.indexOf(place.level)))]
+    : null;
+}
+
+/** A level as colored text: the color mixed into the text color, so amber stays legible on white. */
+function levelText(level: Level): string {
+  return `color-mix(in srgb, ${LEVEL_COLOR[level]} 60%, var(--foreground))`;
+}
+
 /**
- * One tile per kind of place, plus the busiest crowd place. Sums go over places, never cameras: an
- * area's overlapping views already count once in its place (docs/architecture.md).
+ * Four cards over the live campus: people, free parking, vehicles and the busiest place. Sums go over
+ * places, never cameras: an area's overlapping views already count once in its place
+ * (docs/architecture.md).
  */
 export function SummaryStrip({ places }: { places: PlaceView[] }) {
-  const topics = TOPICS.filter((topic) => places.some((place) => PLACE_TOPIC[place.kind] === topic));
-  if (!topics.length) return null;
   const fresh = freshPlaces(places);
-  const busiest = fresh
-    .filter((place) => PLACE_TOPIC[place.kind] === "crowd")
-    .sort((a, b) => LEVEL_ORDER.indexOf(b.level) - LEVEL_ORDER.indexOf(a.level) || b.count - a.count)[0];
+  const crowd = of(fresh, "crowd");
+  const lots = of(fresh, "parking");
+  const roads = of(fresh, "traffic");
+  const people = crowd.reduce((sum, place) => sum + place.count, 0);
+  const free = lots.reduce((sum, place) => sum + (place.parking?.free ?? 0), 0);
+  const total = lots.reduce((sum, place) => sum + (place.parking?.total ?? 0), 0);
+  const vehicles = roads.reduce((sum, place) => sum + place.count, 0);
+  const crowdLevel = worst(crowd);
+  const busiest = [...crowd].sort(
+    (a, b) => LEVEL_ORDER.indexOf(b.level) - LEVEL_ORDER.indexOf(a.level) || b.count - a.count,
+  )[0];
   return (
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-      {topics.map((topic) => (
-        <TopicTile
-          key={topic}
-          topic={topic}
-          places={fresh.filter((place) => PLACE_TOPIC[place.kind] === topic)}
-        />
-      ))}
-      {busiest && (
-        <Tile
-          color={LEVEL_COLOR[busiest.level]}
-          icon={<PlaceIcon place={busiest} className="size-4.5" />}
-          label="En kalabalık"
-        >
-          <Figure value={busiest.count} unit="kişi" level={busiest.level} />
-          <p className="mt-1.5 flex items-center gap-1.5 truncate text-[11px] text-muted">
-            {busiest.name}
-            {busiest.demo && <DemoBadge />}
-          </p>
-        </Tile>
-      )}
+    <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
+      <Card label="Toplam kişi" icon={<KindIcon kind="crowd" className="h-4 w-4" />}>
+        {crowdLevel ? (
+          <Figure value={people.toLocaleString("tr-TR")}>
+            <span style={{ color: levelText(crowdLevel) }}>{LEVEL_LABEL_TR[crowdLevel]} seviye</span>
+          </Figure>
+        ) : (
+          <Empty />
+        )}
+      </Card>
+      <Card label="Boş otopark" icon={<KindIcon kind="parking" className="h-4 w-4" />}>
+        {total > 0 ? (
+          <Figure value={free.toLocaleString("tr-TR")}>
+            /{total} (%{Math.round((free / total) * 100)})
+          </Figure>
+        ) : (
+          <Empty />
+        )}
+      </Card>
+      <Card label="Araç trafiği" icon={<KindIcon kind="traffic" className="h-4 w-4" />}>
+        {roads.length ? <Figure value={vehicles.toLocaleString("tr-TR")}>araç</Figure> : <Empty />}
+      </Card>
+      <Card
+        label="En kalabalık"
+        icon={<span className="text-sm leading-none font-bold">!</span>}
+        alert={busiest?.level === "high"}
+      >
+        {busiest ? (
+          <div className="mt-1 min-w-0">
+            <p className="truncate text-sm leading-snug font-semibold">{busiest.name}</p>
+            <p className="text-xs font-medium" style={{ color: levelText(busiest.level) }}>
+              {busiest.count.toLocaleString("tr-TR")} kişi
+            </p>
+          </div>
+        ) : (
+          <Empty />
+        )}
+      </Card>
     </div>
   );
 }
 
-function TopicTile({ topic, places }: { topic: CameraKind; places: Fresh[] }) {
-  const worst = places.length
-    ? LEVEL_ORDER[Math.max(...places.map((place) => LEVEL_ORDER.indexOf(place.level)))]
-    : null;
-  const count = places.reduce((sum, place) => sum + place.count, 0);
-  const free = places.reduce((sum, place) => sum + (place.parking?.free ?? 0), 0);
-  const total = places.reduce((sum, place) => sum + (place.parking?.total ?? 0), 0);
-  const color = worst ? LEVEL_COLOR[worst] : LEVEL_COLOR.stale;
-  return (
-    <Tile color={color} icon={<KindIcon kind={topic} className="size-4.5" />} label={KIND_LABEL_TR[topic]}>
-      {worst ? (
-        <>
-          <Figure value={topic === "parking" ? `${free}/${total}` : count} unit={UNIT[topic]} level={worst} />
-          <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted">
-            {places.length > 1 && `${places.length} yerin en yoğunu`}
-            {places.some((place) => place.demo) && <DemoBadge />}
-          </p>
-          {topic === "parking" && total > 0 && (
-            <div className="absolute inset-x-0 bottom-0 h-1" style={{ backgroundColor: `${color}33` }}>
-              <div
-                className="h-full transition-[width] duration-700"
-                style={{ width: `${(free / total) * 100}%`, backgroundColor: color }}
-              />
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="mt-3 text-sm text-muted">Güncel veri yok</p>
-      )}
-    </Tile>
-  );
-}
-
-function Tile({
-  color,
-  icon,
+function Card({
   label,
+  icon,
+  alert = false,
   children,
 }: {
-  color: string;
-  icon: ReactNode;
   label: string;
+  icon: ReactNode;
+  alert?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section
-      className="relative overflow-hidden rounded-2xl border bg-surface p-3 sm:p-4"
-      style={{
-        borderColor: `${color}59`,
-        backgroundImage: `linear-gradient(135deg, ${color}2e, transparent 70%)`,
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
-          style={{ backgroundColor: color, color: inkOn(color), boxShadow: `0 0 14px ${color}59` }}
-        >
+    <section className="min-w-0 rounded-xl border border-line bg-surface px-3 py-2.5 shadow-card">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="truncate text-[11px] font-semibold tracking-wide text-muted uppercase">{label}</h2>
+        {/* In the one-row layout the label needs the width: the icon gives way. */}
+        <span className={`2xl:hidden ${alert ? "text-red-600 dark:text-red-400" : "text-muted"}`}>
           {icon}
         </span>
-        <h2 className="truncate text-xs font-semibold tracking-wider text-muted uppercase">{label}</h2>
       </div>
       {children}
     </section>
   );
 }
 
-/** The tile's number: proportional figures at this size, the unit smaller beside it. */
-function Figure({ value, unit, level }: { value: number | string; unit: string; level: Level }) {
+/** The card's number, with its unit or context smaller beside it. */
+function Figure({ value, children }: { value: string; children: ReactNode }) {
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-      <p className="text-2xl leading-none font-bold">
-        {value}
-        <span className="ml-1 text-sm font-medium text-muted">{unit}</span>
-      </p>
-      <LevelChip level={level} />
-    </div>
+    <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 leading-tight">
+      <span className="text-lg font-bold tabular-nums">{value}</span>
+      <span className="text-xs font-medium text-muted">{children}</span>
+    </p>
   );
+}
+
+function Empty() {
+  return <p className="mt-1 text-sm text-muted">Güncel veri yok</p>;
 }

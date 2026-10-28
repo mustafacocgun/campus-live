@@ -1,13 +1,13 @@
 import { PLACE_TOPIC, type PlaceView } from "@campus-live/client";
 import type { CameraKind } from "@campus-live/contracts";
-import type { ReactNode } from "react";
-import { GridIcon, KIND_LABEL_TR, KindIcon, PlaceIcon } from "./icons";
+import { KIND_LABEL_TR } from "./icons";
 
 const TOPICS: CameraKind[] = ["crowd", "parking", "traffic"];
 
 /**
- * "Tümü" plus one chip per kind of place the map has (Kalabalık, Otopark, Trafik); under Kalabalık,
- * one chip per section. Only what the places actually have; nothing invented (CLAUDE.md §0.5).
+ * "Tümü" plus one pill per kind of place the map has (Kalabalık, Otopark, Trafik), and under them one
+ * tab per section of the chosen kind. Only what the places actually have; nothing invented
+ * (CLAUDE.md §0.5).
  */
 export function FilterChips({
   places,
@@ -24,51 +24,54 @@ export function FilterChips({
 }) {
   const topics = TOPICS.filter((each) => places.some((place) => PLACE_TOPIC[place.kind] === each));
   if (!topics.length) return null;
-  const crowd = places.filter((place) => PLACE_TOPIC[place.kind] === "crowd");
-  const sections = [...new Map(crowd.map((place) => [place.section, place])).values()];
-  const chip = (key: string, label: string, icon: ReactNode, active: boolean, onClick: () => void) => (
+  // Sections once a kind is chosen: under "Tümü" the row would be long and push the list down.
+  const sections = topic
+    ? [...new Set(places.filter((place) => PLACE_TOPIC[place.kind] === topic).map((place) => place.section))]
+    : [];
+  const pill = (key: string, label: string, active: boolean, onClick: () => void) => (
     <button
       key={key}
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-xl border py-1.5 pr-3 pl-1.5 text-sm font-semibold transition ${
+      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
         active
-          ? "border-transparent bg-linear-to-r from-accent to-accent-2 text-accent-foreground shadow-lg shadow-accent/30"
-          : "border-line bg-surface hover:border-accent/60"
+          ? "bg-accent text-accent-foreground shadow-card"
+          : "bg-surface text-foreground ring-1 ring-line hover:ring-line-strong"
       }`}
     >
-      {/* The icon sits in its own tile, tinted while the chip is off and white-on-glass once on. */}
-      <span
-        className={`grid h-7 w-7 place-items-center rounded-lg ${active ? "bg-white/20" : "bg-accent/15 text-accent-text"}`}
-      >
-        {icon}
-      </span>
       {label}
     </button>
   );
   return (
-    <nav aria-label="Yerleri süz" className="flex flex-wrap gap-2">
-      {chip("all", "Tümü", <GridIcon />, topic === null, () => onTopic(null))}
-      {topics.map((each) =>
-        chip(
-          each,
-          KIND_LABEL_TR[each],
-          <KindIcon kind={each} className="h-4 w-4" />,
-          topic === each && !section,
-          () => onTopic(each),
-        ),
+    <nav aria-label="Yerleri süz" className="space-y-2.5">
+      <div className="flex flex-wrap gap-1.5">
+        {pill("all", "Tümü", topic === null, () => onTopic(null))}
+        {topics.map((each) => pill(each, KIND_LABEL_TR[each], topic === each, () => onTopic(each)))}
+      </div>
+      {sections.length > 1 && (
+        // Scrolls sideways on a narrow sidebar instead of wrapping into a block of tabs.
+        <div className="-mx-1 flex gap-1 overflow-x-auto border-b border-line px-1 [scrollbar-width:none]">
+          {sections.map((each) => {
+            const active = section === each;
+            return (
+              <button
+                key={each}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSection(active ? null : each)}
+                className={`-mb-px shrink-0 border-b-2 px-2 pt-1 pb-2 text-xs font-semibold whitespace-nowrap transition ${
+                  active
+                    ? "border-accent text-accent-text"
+                    : "border-transparent text-muted hover:text-foreground"
+                }`}
+              >
+                {each}
+              </button>
+            );
+          })}
+        </div>
       )}
-      {topic === "crowd" &&
-        sections.map((place) =>
-          chip(
-            place.section,
-            place.section,
-            <PlaceIcon place={place} className="h-4 w-4" />,
-            section === place.section,
-            () => onSection(section === place.section ? null : place.section),
-          ),
-        )}
     </nav>
   );
 }

@@ -23,12 +23,12 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
+import { darkThemeQuery } from "@/lib/theme";
 
 // OpenFreeMap Liberty (D24): free, no key; MapLibre adds the attribution its terms require
 // (docs/data-sources.md). Dark mode is the same style darkened by darkStyle, so it keeps its colors;
 // never a CSS filter, which would invert the heat colors too.
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
-const DARK = "(prefers-color-scheme: dark)";
 // Each update glides in over this long, so the cloud flows instead of jumping.
 const GLIDE_MS = 500;
 // The basemap's flat buildings and its 3D ones: ground layers go under both, our lit buildings
@@ -148,7 +148,8 @@ export default function LiveMap({
   }, [places, selectedId, campus, onSelect, picking, onPick, me]);
 
   useEffect(() => {
-    const media = window.matchMedia(DARK);
+    // The page's theme (the toggle, else the system): the map darkens with the rest of the page.
+    const media = darkThemeQuery();
     let map: MapLibreMap | null = null;
     let cancelled = false;
     const styles: { light?: StyleSpecification; dark?: StyleSpecification } = {};

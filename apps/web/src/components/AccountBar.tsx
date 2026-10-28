@@ -6,12 +6,16 @@ import { useAccount } from "@/lib/use-account";
 import { usePopover } from "@/lib/use-popover";
 import { AlertSettings } from "./AlertSettings";
 import { AlertToasts } from "./AlertToasts";
-import { LogOutIcon, SlidersIcon } from "./icons";
+import { BellIcon, GearIcon, LogOutIcon, UserIcon } from "./icons";
 import { NotificationBell } from "./NotificationBell";
 
+const ICON_BUTTON =
+  "grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-foreground";
+
 /**
- * The header's account corner: "Giriş yap" when signed out; alert settings, the inbox and the
- * account menu when signed in. Nothing at all while accounts are off (no database): the map works.
+ * The top bar's account corner. Signed out: the bell and the settings lead to sign-in, beside
+ * "Giriş yap". Signed in: the inbox, alert settings and the account menu. Nothing at all while
+ * accounts are off (no database): the map works.
  */
 export function AccountBar() {
   const { account, notifications, unread, arrived, signOut, markAllRead, dismiss } = useAccount();
@@ -21,28 +25,51 @@ export function AccountBar() {
   if (account.status === "loading" || account.status === "off") return null;
   if (account.status === "signed-out") {
     return (
-      <Link
-        href="/giris"
-        className="rounded-full bg-linear-to-r from-accent to-accent-2 px-4 py-2 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/25 transition hover:opacity-95"
-      >
-        Giriş yap
-      </Link>
+      <>
+        <Link
+          href="/giris"
+          className={ICON_BUTTON}
+          aria-label="Bildirimler için giriş yapın"
+          title="Bildirimler için giriş yapın"
+        >
+          <BellIcon className="h-[18px] w-[18px]" />
+        </Link>
+        <Link
+          href="/giris"
+          className={ICON_BUTTON}
+          aria-label="Bildirim ayarları için giriş yapın"
+          title="Bildirim ayarları için giriş yapın"
+        >
+          <GearIcon className="h-[18px] w-[18px]" />
+        </Link>
+        <span aria-hidden className="mx-1.5 hidden h-5 w-px bg-line sm:block" />
+        <Link
+          href="/giris"
+          className="flex items-center gap-2.5 rounded-full py-1 pr-1 pl-2 text-sm font-semibold transition hover:bg-surface-2"
+        >
+          <span className="hidden sm:inline">Giriş yap</span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-accent-foreground">
+            <UserIcon className="h-4 w-4" />
+          </span>
+        </Link>
+      </>
     );
   }
 
   const { email } = account.user;
   return (
     <>
+      <NotificationBell notifications={notifications} unread={unread} onOpen={() => void markAllRead()} />
       <button
         type="button"
         onClick={() => setSettingsOpen(true)}
-        className="flex h-10 items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm font-semibold transition hover:border-accent/60"
+        aria-label="Bildirim ayarları"
+        title="Bildirim ayarları"
+        className={ICON_BUTTON}
       >
-        <SlidersIcon className="h-4 w-4 text-accent-text" />
-        <span className="hidden sm:inline">Bildirim ayarları</span>
-        <span className="sr-only sm:hidden">Bildirim ayarları</span>
+        <GearIcon className="h-[18px] w-[18px]" />
       </button>
-      <NotificationBell notifications={notifications} unread={unread} onOpen={() => void markAllRead()} />
+      <span aria-hidden className="mx-1.5 hidden h-5 w-px bg-line sm:block" />
       <div ref={menuBox} className="relative">
         <button
           type="button"
@@ -50,12 +77,15 @@ export function AccountBar() {
           aria-expanded={menuOpen}
           aria-label="Hesap"
           title={email}
-          className="grid h-10 w-10 place-items-center rounded-full bg-linear-to-br from-accent to-accent-2 font-bold text-accent-foreground shadow-md shadow-accent/25"
+          className="flex items-center gap-2.5 rounded-full py-1 pr-1 pl-2 transition hover:bg-surface-2"
         >
-          {email.charAt(0).toLocaleUpperCase("tr")}
+          <span className="hidden max-w-40 truncate text-sm font-medium text-muted lg:inline">{email}</span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+            {email.charAt(0).toLocaleUpperCase("tr")}
+          </span>
         </button>
         {menuOpen && (
-          <div className="absolute top-12 right-0 z-[1100] w-64 rounded-2xl border border-line bg-surface p-2 shadow-2xl">
+          <div className="on-page absolute top-11 right-0 z-[1100] w-64 rounded-2xl border border-line bg-surface p-2 shadow-2xl">
             <p className="truncate px-2 pt-1 pb-2 text-sm text-muted">{email}</p>
             <button
               type="button"
