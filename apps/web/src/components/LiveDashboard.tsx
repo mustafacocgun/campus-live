@@ -5,6 +5,7 @@ import type { CameraKind } from "@campus-live/contracts";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { useLivePlaces } from "@/lib/use-live-places";
+import type { MyLocation } from "@/lib/my-location";
 import { AccountBar } from "./AccountBar";
 import { AssistantPanel } from "./AssistantPanel";
 import { FilterChips } from "./FilterChips";
@@ -25,6 +26,9 @@ export function LiveDashboard() {
   const [topic, setTopic] = useState<CameraKind | null>(null);
   const [section, setSection] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // The user's position, for "the nearest…" questions: kept in this page only.
+  const [me, setMe] = useState<MyLocation | null>(null);
+  const [picking, setPicking] = useState(false);
   const mapBox = useRef<HTMLDivElement>(null);
   const demo = places.some((place) => !place.stale && place.demo);
   const visible = places.filter(
@@ -49,6 +53,13 @@ export function LiveDashboard() {
   }
 
   // On a phone the list sits below the map, where the detail opens: bring the map back into view.
+  // A place an answer points at: shown whatever the filters, on the map and in the detail.
+  function showPlace(id: string) {
+    setTopic(null);
+    setSection(null);
+    selectFromList(id);
+  }
+
   function selectFromList(id: string) {
     setSelectedId(id);
     const top = mapBox.current?.getBoundingClientRect().top;
@@ -128,6 +139,12 @@ export function LiveDashboard() {
               cells={heat}
               selectedId={selected?.id ?? null}
               onSelect={setSelectedId}
+              me={me}
+              picking={picking}
+              onPick={(spot) => {
+                setMe({ ...spot, source: "map" });
+                setPicking(false);
+              }}
             />
             <div className="pointer-events-none absolute right-3 bottom-8 z-[1000] flex flex-col gap-1.5 rounded-xl border border-line bg-surface/90 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur">
               <span className="flex items-center gap-2">
@@ -174,8 +191,17 @@ export function LiveDashboard() {
             </h2>
             <PlaceList places={visible} selectedId={selected?.id ?? null} onSelect={selectFromList} />
           </section>
-          <section className="flex flex-col rounded-2xl border border-line bg-surface p-4 shadow-sm lg:min-h-[280px] lg:flex-1">
-            <AssistantPanel />
+          <section className="flex flex-col rounded-2xl border border-line bg-surface p-4 shadow-sm lg:min-h-[340px] lg:flex-1">
+            <AssistantPanel
+              me={me}
+              picking={picking}
+              onLocate={(next) => {
+                setMe(next);
+                setPicking(false);
+              }}
+              onPicking={setPicking}
+              onShowPlace={showPlace}
+            />
           </section>
         </aside>
         <section className="hidden rounded-2xl border border-line bg-surface p-4 shadow-sm 2xl:block 2xl:min-h-0 2xl:overflow-y-auto">

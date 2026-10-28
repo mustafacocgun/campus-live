@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
   AssistantRequest,
+  AssistantResponse,
   Camera,
   CameraReading,
   CampusMap,
@@ -213,5 +214,28 @@ describe("places and live snapshots", () => {
     };
     expect(Camera.parse(camera)).toMatchObject({ place: "muhendislik", indoor: true });
     expect(Camera.safeParse({ ...camera, place: "Mühendislik" }).success).toBe(false);
+  });
+});
+
+describe("the assistant and the user's location", () => {
+  it("takes an optional position with a question, within the earth's ranges", () => {
+    const location = { lat: 40.742, lng: 30.332 };
+    expect(AssistantRequest.parse({ message: "En yakın otopark?", location }).location).toEqual(location);
+    expect(AssistantRequest.parse({ message: "En yakın otopark?" }).location).toBeUndefined();
+    expect(AssistantRequest.safeParse({ message: "x", location: { lat: 200, lng: 30 } }).success).toBe(false);
+    expect(AssistantRequest.safeParse({ message: "x", location: { lat: 40 } }).success).toBe(false);
+  });
+
+  it("answers with the places it is about, for the screen to point at", () => {
+    const answer = {
+      answer: "Sana en yakın otoparklar…",
+      via: "fallback",
+      places: [
+        { id: "a-otoparki", name: "Otopark A", metres: 130 },
+        { id: "tas-kafe", name: "Taş Kafe", metres: null },
+      ],
+    };
+    expect(AssistantResponse.parse(answer).places).toHaveLength(2);
+    expect(AssistantResponse.parse({ answer: "x", via: "llm" }).places).toBeUndefined();
   });
 });

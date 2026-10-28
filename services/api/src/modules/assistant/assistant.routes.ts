@@ -8,13 +8,17 @@ import type { LlmClient } from "./llm-client.js";
 import { placeViews } from "./places-view.js";
 import { rateLimit } from "./rate-limit.js";
 
-export function assistantRouter(deps: { store: LiveStore; places: PlaceRegistry; llm: LlmClient | null }): Router {
+export function assistantRouter(deps: {
+  store: LiveStore;
+  places: PlaceRegistry;
+  llm: LlmClient | null;
+}): Router {
   const router = Router();
   router.post("/chat", rateLimit(10, 60_000), async (req, res) => {
-    const { message } = AssistantRequest.parse(req.body);
+    const { message, location } = AssistantRequest.parse(req.body);
     const now = new Date();
     const places = placeViews(deps.places.list(), deps.store.live(now));
-    res.json(ok(await answerQuestion(message, { llm: deps.llm, places, now })));
+    res.json(ok(await answerQuestion(message, { llm: deps.llm, places, now, location })));
   });
   return router;
 }
