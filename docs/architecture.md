@@ -88,7 +88,7 @@ The zod schemas are the single source of truth. A build step writes them as JSON
 ## Assistant
 
 - **Placement:** `services/api` owns the assistant, because it holds the live state.
-- **Provider:** an OpenAI-compatible `/chat/completions` call. `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` come from the API's environment only, and the key never appears in a response or a log.
+- **Provider:** an OpenAI-compatible `/chat/completions` call. `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` come from the API's environment only, and the key never appears in a response or a log. The team uses Google AI Studio's free tier with `gemini-3.5-flash-lite` (D26); on that tier Google may use the questions to improve its products and human reviewers may read them, so a question must never carry personal data.
 - **Grounding:** each question is sent with a compact snapshot of every place (name, kind, level, count or free slots, age, demo or not). The system prompt says to answer in Turkish, only from that data, to copy numbers exactly, and to say "Bu konuda verim yok" when the data has no answer.
 - **Fallback:** without a key, or when the provider fails or takes more than 8 s, a rule-based answer is built from the same places (the named place first, then the kind of question; a crowd question about the whole campus gets the three busiest places). The demo works without any LLM.
 - **Rate limit:** 10 questions per minute per client.

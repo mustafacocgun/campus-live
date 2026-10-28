@@ -63,6 +63,12 @@ Coverr clips (its license forbids use "as a dataset in any form"). Video dataset
 
 Map data © OpenStreetMap contributors (ODbL), shown in the map's attribution.
 
+## Assistant LLM
+
+| Service                                                                         | Used by                           | Terms                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Checked    |
+| ------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Google Gemini API, free tier ("Unpaid Services"), model `gemini-3.5-flash-lite` | the API's assistant (server side) | "Google uses the content you submit to the Services and any generated responses to provide, improve, and develop Google products and services"; "human reviewers may read, annotate, and process your API input and output"; "Do not submit sensitive, confidential, or personal information to the Unpaid Services"; "You must be 18 years of age or older to use the APIs"; "You may use only Paid Services when making API Clients available to users in the European Economic Area, Switzerland, or the United Kingdom" [EVIDENCED, ai.google.dev/gemini-api/terms] | 2026-10-28 |
+
 ## Candidates for the other camera spots (license checked 2026-10-27, per clip at download)
 
 Grades: [EVIDENCED] read on the source's own page · [WEAK] second-hand or partly unreadable.
