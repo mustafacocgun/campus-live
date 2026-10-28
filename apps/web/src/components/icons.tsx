@@ -91,3 +91,27 @@ export function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
 export function GridIcon({ className = "h-4 w-4" }: { className?: string }) {
   return <StrokeIcon d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" className={className} />;
 }
+
+/** The inbox of region alerts. */
+export function BellIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return <StrokeIcon d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0" className={className} />;
+}
+
+/** Alert settings: two sliders, the threshold being one. */
+export function SlidersIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return <StrokeIcon d="M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4" className={className} />;
+}
+
+export function LogOutIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <StrokeIcon d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" className={className} />
+  );
+}
+
+export function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" className={className} />;
+}
+
+export function MailIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M4 6h16v12H4zM4 7l8 6 8-6" className={className} />;
+}

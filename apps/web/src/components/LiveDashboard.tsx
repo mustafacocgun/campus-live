@@ -5,6 +5,7 @@ import type { CameraKind } from "@campus-live/contracts";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { useLivePlaces } from "@/lib/use-live-places";
+import { AccountBar } from "./AccountBar";
 import { AssistantPanel } from "./AssistantPanel";
 import { FilterChips } from "./FilterChips";
 import { LogoMark } from "./icons";
@@ -74,17 +75,20 @@ export function LiveDashboard() {
             <p className="text-sm text-muted">Kampüsün canlı haritası</p>
           </div>
         </div>
-        <span className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium">
-          <span className="relative flex h-2.5 w-2.5">
-            {connected && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
-            )}
-            <span
-              className={`relative inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-green-500" : "bg-gray-400"}`}
-            />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex h-10 items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm font-medium">
+            <span className="relative flex h-2.5 w-2.5">
+              {connected && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
+              )}
+              <span
+                className={`relative inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-green-500" : "bg-gray-400"}`}
+              />
+            </span>
+            {connected ? "Canlı bağlantı" : "Bağlantı yok"}
           </span>
-          {connected ? "Canlı bağlantı" : "Bağlantı yok"}
-        </span>
+          <AccountBar />
+        </div>
       </header>
       {error && (
         <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-700 dark:text-red-300">
