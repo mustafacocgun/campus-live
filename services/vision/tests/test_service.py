@@ -5,7 +5,15 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from conftest import NOW, fake_yolo, synthetic_camera, synthetic_pixels, write_clip, write_wildtrack
+from conftest import (
+    EXAMPLE_CAMERAS,
+    NOW,
+    fake_yolo,
+    synthetic_camera,
+    synthetic_pixels,
+    write_clip,
+    write_wildtrack,
+)
 from vision.cameras import CameraConfig, load_cameras
 from vision.config import Settings
 from vision.registry import load_registry
@@ -176,3 +184,53 @@ def test_parking_cameras_detect_at_1280_px(monkeypatch, tmp_path) -> None:
         worker.detector_factory()(np.zeros((72, 128, 3), dtype=np.uint8))
         sizes[worker.camera.id] = calls[-1].get("imgsz")
     assert sizes == {"meydan": None, "muh-ic": None, "otopark-1": 1280, "yol-1": None}
+
+
+def _dataset(tmp_path, *lines: dict) -> str:
+    path = tmp_path / "demo.jsonl"
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8")
+    return str(path)
+
+
+CROWD_LINE = {"offsetS": 0.0, "kind": "crowd", "count": 4, "level": "low", "source": "demo-footage"}
+PARKING_LINE = {
+    "offsetS": 0.0,
+    "kind": "parking",
+    "count": 1,
+    "level": "low",
+    "parking": {"total": 1, "free": 0},
+    "source": "demo-footage",
+}
+
+
+def test_replay_runs_the_recorded_cameras_and_leaves_the_rest_grey(tmp_path) -> None:
+    # Nothing is made up for a camera without recorded readings (CLAUDE.md §4.3): it does not run.
+    dataset = _dataset(
+        tmp_path, CROWD_LINE | {"cameraId": "meydan"}, PARKING_LINE | {"cameraId": "otopark-1"}
+    )
+    settings = Settings(_env_file=None, detector="replay", replay_file=dataset)
+    workers = build_workers(settings, *_one_camera_of_each_kind(tmp_path))
+    assert {worker.camera.id: worker.mode for worker in workers} == {
+        "meydan": "replay",
+        "otopark-1": "replay",
+    }
+
+
+def test_replay_refuses_to_start_without_its_dataset(tmp_path) -> None:
+    settings = Settings(_env_file=None, detector="replay", replay_file=str(tmp_path / "missing.jsonl"))
+    with pytest.raises(FileNotFoundError):
+        build_workers(settings, *_one_camera_of_each_kind(tmp_path))
+
+
+def test_replay_service_reports_replay(monkeypatch, tmp_path) -> None:
+    camera = load_cameras(EXAMPLE_CAMERAS)[0]
+    monkeypatch.setenv("VISION_DETECTOR", "replay")
+    monkeypatch.setenv("VISION_CAMERAS_FILE", str(EXAMPLE_CAMERAS))
+    monkeypatch.setenv("VISION_REPLAY_FILE", _dataset(tmp_path, CROWD_LINE | {"cameraId": camera.id}))
+    monkeypatch.setenv("VISION_API_URL", "http://127.0.0.1:9")
+    from vision.service import app
+
+    with TestClient(app) as client:
+        status = client.get("/status").json()
+    assert status["detector"] == "replay"
+    assert [(c["cameraId"], c["mode"]) for c in status["cameras"]] == [(camera.id, "replay")]

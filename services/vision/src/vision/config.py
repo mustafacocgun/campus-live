@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     # The example lists every camera without footage, so nothing runs; configs/cameras.yaml (your copy,
     # git-ignored) sets each camera's video.
     cameras_file: str = "configs/cameras.example.yaml"
-    # Live YOLO is the only data source in the app; test-boxes is for automated tests (CLAUDE.md §3.4).
-    detector: Literal["yolo", "test-boxes"] = "yolo"
+    # Live YOLO by default; replay plays readings recorded once from footage (D32); test-boxes is for
+    # automated tests (CLAUDE.md §3.4).
+    detector: Literal["yolo", "test-boxes", "replay"] = "yolo"
+    # Written by `python -m vision.record`, played by VISION_DETECTOR=replay. Git-ignored, like the
+    # footage it is made from.
+    replay_file: str = "recordings/demo.jsonl"
     publish_interval_s: float = 0.5
     port: int = 8001
