@@ -1,166 +1,113 @@
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import type { ApiResponse, AssistantResponse, LiveCamera } from "@campus-live/contracts";
+import type { ApiResponse, AssistantResponse } from "@campus-live/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import { fallbackAnswer } from "../src/modules/assistant/fallback-answer.js";
 import { buildLiveContext } from "../src/modules/assistant/live-context.js";
 import { createLlmClient } from "../src/modules/assistant/llm-client.js";
+import type { PlaceView } from "../src/modules/assistant/places-view.js";
 import { reading, startServer } from "./helpers.js";
 
-const NOW = new Date("2026-10-27T07:00:10.000Z");
-const FOUR_SECONDS_AGO = "2026-10-27T07:00:06.000Z";
 const API_KEY = "sk-test-secret-key";
+const POINT = { type: "Point" as const, coordinates: [30.332, 40.742] as [number, number] };
 
-const cameras: LiveCamera[] = [
-  {
-    id: "kutuphane-giris",
-    name: "Kütüphane girişi",
-    section: "Kütüphane",
-    kind: "crowd",
-    latitude: 40.7412,
-    longitude: 30.3306,
-    heading: 0,
-    fovDeg: 70,
-    rangeM: 30,
+function place(
+  id: string,
+  name: string,
+  section: string,
+  kind: PlaceView["kind"],
+  state: Partial<PlaceView> = {},
+): PlaceView {
+  return {
+    id,
+    name,
+    section,
+    kind,
+    geometry: POINT,
+    count: 0,
+    level: "low",
+    parking: null,
     stale: false,
     ageMs: 4_000,
-    reading: {
-      cameraId: "kutuphane-giris",
-      kind: "crowd",
-      count: 23,
-      level: "medium",
-      source: "simulated",
-      measuredAt: FOUR_SECONDS_AGO,
-    },
-  },
-  {
-    id: "kafe-merkez",
-    name: "Merkez kafe",
-    section: "Kafeler",
-    kind: "crowd",
-    latitude: 40.7419,
-    longitude: 30.3318,
-    heading: 0,
-    fovDeg: 70,
-    rangeM: 30,
-    stale: false,
-    ageMs: 4_000,
-    reading: {
-      cameraId: "kafe-merkez",
-      kind: "crowd",
-      count: 7,
-      level: "low",
-      source: "simulated",
-      measuredAt: FOUR_SECONDS_AGO,
-    },
-  },
-  {
-    id: "otopark-a",
-    name: "Otopark A",
-    section: "Otoparklar",
-    kind: "parking",
-    latitude: 40.7431,
-    longitude: 30.3297,
-    heading: 0,
-    fovDeg: 70,
-    rangeM: 30,
-    stale: false,
-    ageMs: 4_000,
-    reading: reading({ measuredAt: FOUR_SECONDS_AGO }),
-  },
-  {
-    id: "ana-yol",
-    name: "Kampüs ana yolu",
-    section: "Yollar",
-    kind: "traffic",
-    latitude: 40.7405,
-    longitude: 30.333,
-    heading: 0,
-    fovDeg: 70,
-    rangeM: 30,
+    demo: true,
+    ...state,
+  };
+}
+
+const places: PlaceView[] = [
+  place("kutuphane-alani", "Kütüphane girişi", "Kütüphane", "area", { count: 23, level: "medium" }),
+  place("kafe-alani", "Merkez kafe", "Kafeler", "area", { count: 7, level: "low" }),
+  place("a-otoparki", "Otopark A", "Otoparklar", "parking", {
+    count: 28,
+    level: "medium",
+    parking: { total: 40, free: 12 },
+  }),
+  place("kampus-ana-caddesi", "Kampüs ana yolu", "Yollar", "road", {
+    count: null,
+    level: null,
     stale: true,
     ageMs: 3_600_000,
-    reading: {
-      cameraId: "ana-yol",
-      kind: "traffic",
-      count: 9,
-      level: "medium",
-      source: "simulated",
-      measuredAt: "2026-10-27T06:00:00.000Z",
-    },
-  },
+  }),
 ];
 
 describe("live context and fallback", () => {
   it("context carries exact free-slot numbers", () => {
-    const context = buildLiveContext(cameras, NOW);
+    const context = buildLiveContext(places);
     expect(context).toContain(
       "Otopark A (Otoparklar, otopark): 12/40 boş, seviye Orta, 4 sn önce, demo verisi",
     );
-    expect(context).toContain("Kütüphane girişi (Kütüphane, kalabalık): 23 kişi, seviye Orta");
+    expect(context).toContain("Kütüphane girişi (Kütüphane, açık alan): 23 kişi, seviye Orta");
   });
 
-  it("stale cameras are not reported as current", () => {
-    expect(buildLiveContext(cameras, NOW)).toContain("Kampüs ana yolu (Yollar, trafik): güncel veri yok");
-    const answer = fallbackAnswer("Trafik nasıl?", cameras, NOW);
+  it("stale places are not reported as current", () => {
+    expect(buildLiveContext(places)).toContain("Kampüs ana yolu (Yollar, yol): güncel veri yok");
+    const answer = fallbackAnswer("Trafik nasıl?", places);
     expect(answer).toContain("güncel veri yok");
-    expect(answer).not.toContain("9 araç");
+    expect(answer).not.toMatch(/\d+ araç/);
   });
 
   it("fallback says it has no data for unrelated questions", () => {
-    const answer = fallbackAnswer("Yarınki sınav saat kaçta?", cameras, NOW);
+    const answer = fallbackAnswer("Yarınki sınav saat kaçta?", places);
     expect(answer).toContain("Bu konuda verim yok");
     expect(answer).not.toContain("Otopark A");
   });
 
-  it("fallback summarises everything for a general question", () => {
-    const answer = fallbackAnswer("Kampüste genel durum ne?", cameras, NOW);
-    for (const name of ["Kütüphane girişi", "Otopark A", "Kampüs ana yolu"]) expect(answer).toContain(name);
+  it("fallback summarises every topic for a general question", () => {
+    const answer = fallbackAnswer("Kampüste genel durum ne?", places);
+    for (const text of ["En kalabalık yerler:", "Kütüphane girişi", "Otopark A", "En yoğun yollar:"]) {
+      expect(answer).toContain(text);
+    }
   });
 
   it("fallback says a full lot has no free slots", () => {
-    const full = cameras.map((camera) =>
-      camera.id === "otopark-a"
-        ? {
-            ...camera,
-            reading: reading({
-              count: 40,
-              level: "high",
-              parking: { total: 40, free: 0 },
-              measuredAt: FOUR_SECONDS_AGO,
-            }),
-          }
-        : camera,
+    const full = places.map((p) =>
+      p.id === "a-otoparki"
+        ? { ...p, count: 40, level: "high" as const, parking: { total: 40, free: 0 } }
+        : p,
     );
-    const answer = fallbackAnswer("Otoparkta boş yer var mı?", full, NOW);
+    const answer = fallbackAnswer("Otopark A'da boş yer var mı?", full);
     expect(answer).toContain("Otopark A: boş yer yok (40 yerin hepsi dolu)");
     expect(answer).not.toContain("0 boş yer var");
   });
 
   it("answers the place the question names, before the kind of question", () => {
-    const cafe = fallbackAnswer("Kafede boş yer var mı?", cameras, NOW);
+    const cafe = fallbackAnswer("Kafede boş yer var mı?", places);
     expect(cafe).toContain("Merkez kafe: 7 kişi");
     expect(cafe).not.toContain("Otopark A");
-    const library = fallbackAnswer("Kütüphanede boş yer var mı?", cameras, NOW);
+    const library = fallbackAnswer("Kütüphanede boş yer var mı?", places);
     expect(library).toContain("Kütüphane girişi: 23 kişi");
     expect(library).not.toContain("Otopark A");
   });
 
-  it("answers only the named camera of a kind", () => {
-    const answer = fallbackAnswer("Kafe kalabalık mı?", cameras, NOW);
-    expect(answer).toContain("Merkez kafe");
-    expect(answer).not.toContain("Kütüphane girişi");
-  });
-
-  it("says it has no data for a place without a camera", () => {
-    const answer = fallbackAnswer("Yemekhane kalabalık mı?", cameras, NOW);
+  it("says it has no data for a place it does not watch", () => {
+    const answer = fallbackAnswer("Yemekhane kalabalık mı?", places);
     expect(answer).toContain("Bu konuda verim yok");
     expect(answer).not.toContain("23 kişi");
   });
 
   it("fallback quotes the live numbers", () => {
     for (const question of ["Otoparkta boş yer var mı?", "otoparkta bos yer var mi"]) {
-      const answer = fallbackAnswer(question, cameras, NOW);
+      const answer = fallbackAnswer(question, places);
       expect(answer).toContain("Otopark A: 12 boş yer var (toplam 40)");
       expect(answer).not.toContain("Kütüphane");
     }
@@ -168,98 +115,95 @@ describe("live context and fallback", () => {
 });
 
 describe("fallback on the campus map", () => {
-  const crowdCamera = (
-    id: string,
-    name: string,
-    section: string,
-    count: number,
-    stale = false,
-  ): LiveCamera => ({
-    id,
-    name,
-    section,
-    kind: "crowd",
-    latitude: 40.742,
-    longitude: 30.332,
-    heading: 0,
-    fovDeg: 70,
-    rangeM: 30,
-    stale,
-    ageMs: stale ? 3_600_000 : 4_000,
-    reading: {
-      cameraId: id,
-      kind: "crowd",
-      count,
-      level: count >= 10 ? "high" : "medium",
-      source: "demo-footage",
-      measuredAt: FOUR_SECONDS_AGO,
-    },
-  });
+  const crowd = (id: string, name: string, section: string, count: number, stale = false) =>
+    place(id, name, section, "area", { count, level: count >= 10 ? "high" : "medium", stale });
   const campus = [
-    crowdCamera("kutuphane-bati", "Kütüphane batı", "Kütüphane", 4),
-    crowdCamera("kutuphane-yolu", "Kütüphane yolu", "Kütüphane", 5),
-    crowdCamera("tas-kafe", "Taş Kafe", "Kafeler", 11),
-    crowdCamera("yemekhane", "Öğrenci Yemekhanesi", "Yemekhane", 8),
-    crowdCamera("bilisim", "Bilişim Fakültesi", "Fakülteler", 6),
-    crowdCamera("fen-edebiyat", "Fen-Edebiyat Fakültesi", "Fakülteler", 2),
-    crowdCamera("rektorluk", "Rektörlük", "Kampüs binaları", 30, true),
+    crowd("kutuphane-bati-alani", "Kütüphane batı", "Kütüphane", 4),
+    crowd("kutuphane-yolu-alani", "Kütüphane yolu", "Kütüphane", 5),
+    crowd("tas-kafe-onu", "Taş Kafe önü", "Kafeler", 11),
+    place("ogrenci-yemekhanesi", "Öğrenci Yemekhanesi", "Yemekhane", "building", {
+      count: 8,
+      level: "medium",
+    }),
+    place("bilisim", "Bilişim Fakültesi", "Fakülteler", "building", { count: 6, level: "medium" }),
+    place("fen-edebiyat", "Fen-Edebiyat Fakültesi", "Fakülteler", "building", { count: 2, level: "low" }),
+    crowd("rektorluk-onu", "Rektörlük önü", "Kampüs binaları", 30, true),
+    place("kantin-otoparki", "Kantin otoparkı", "Otoparklar", "parking", {
+      count: 10,
+      level: "low",
+      parking: { total: 30, free: 20 },
+    }),
+    place("t4-otoparki", "T4 otoparkı", "Otoparklar", "parking", {
+      count: 9,
+      level: "high",
+      parking: { total: 10, free: 1 },
+    }),
+    place("kampus-ici-yolu", "Kampüs İçi Yolu", "Yollar", "road", { count: 6, level: "high" }),
   ];
 
-  it("the fallback names the busiest crowd camera for a general crowd question", () => {
-    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", campus, NOW);
-    const [header, first] = answer.split("\n");
-    expect(header).toBe("Canlı verilere göre en kalabalık yerler:");
-    expect(first).toContain("Taş Kafe: 11 kişi");
+  it("the fallback names the busiest places for a general crowd question", () => {
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", campus);
+    const [header, title, first] = answer.split("\n");
+    expect([header, title]).toEqual(["Canlı verilere göre:", "En kalabalık yerler:"]);
+    expect(first).toContain("Taş Kafe önü: 11 kişi");
     expect(answer).toContain("Öğrenci Yemekhanesi: 8 kişi");
     expect(answer).not.toContain("Fen-Edebiyat"); // the busiest three only
     expect(answer).not.toContain("Rektörlük"); // no fresh reading: never "the busiest"
   });
 
-  it("says so when no crowd camera has a fresh reading", () => {
-    const allStale = campus.map((camera) => ({ ...camera, stale: true }));
-    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", allStale, NOW);
-    expect(answer).toContain("Kalabalık: şu an hiçbir kameradan güncel veri yok.");
-    expect(answer).not.toMatch(/\d+ kişi/);
+  it("lists the lots with the most free slots for a general parking question", () => {
+    const answer = fallbackAnswer("Otoparkta boş yer var mı?", campus);
+    const lines = answer.split("\n");
+    expect(lines[1]).toBe("En çok boş yeri olan otoparklar:");
+    expect(lines[2]).toBe("Kantin otoparkı: 20 boş yer var (toplam 30).");
+    expect(lines[3]).toBe("T4 otoparkı: 1 boş yer var (toplam 10).");
   });
 
-  it("never lists views of one crowd as several busy places", () => {
-    // The plaza's views see the same people: one of them stands for the plaza in the busiest list.
-    const plaza = [
-      crowdCamera("kutuphane-meydani-1", "Kütüphane meydanı 1", "Kütüphane meydanı", 20),
-      crowdCamera("kutuphane-meydani-2", "Kütüphane meydanı 2", "Kütüphane meydanı", 19),
-      crowdCamera("kutuphane-meydani-3", "Kütüphane meydanı 3", "Kütüphane meydanı", 18),
-    ];
-    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", [...plaza, ...campus], NOW);
-    expect(answer).toContain("Kütüphane meydanı 1: 20 kişi");
-    expect(answer).not.toContain("Kütüphane meydanı 2");
-    expect(answer).toContain("Taş Kafe: 11 kişi"); // the next busiest places still make the list
-  });
-
-  it("does not take students for the student dining hall", () => {
-    const answer = fallbackAnswer("Öğrenciler en çok nerede kalabalık?", campus, NOW);
-    expect(answer.split("\n")[0]).toBe("Canlı verilere göre en kalabalık yerler:");
-  });
-
-  it("finds a place named with or without a suffix", () => {
-    const faculty = fallbackAnswer("Fakülte kalabalık mı?", campus, NOW);
-    expect(faculty).toContain("Bilişim Fakültesi: 6 kişi");
-    expect(faculty).toContain("Fen-Edebiyat Fakültesi: 2 kişi");
-    expect(fallbackAnswer("Fen Edebiyat kalabalık mı?", campus, NOW)).toContain(
-      "Fen-Edebiyat Fakültesi: 2 kişi",
+  it("answers traffic per road", () => {
+    expect(fallbackAnswer("Yolda trafik var mı?", campus)).toContain(
+      "Kampüs İçi Yolu: trafik Yoğun (6 araç).",
     );
   });
 
-  it("does not take a short word for a place", () => {
-    // "yol" asks about traffic, not about the walkway camera "Kütüphane yolu".
-    const answer = fallbackAnswer("Yol trafiği nasıl?", campus, NOW);
-    expect(answer).toContain("Bu konuda verim yok");
-    expect(answer).not.toContain("Kütüphane yolu");
+  it("says so when no crowd place has a fresh reading", () => {
+    const allStale = campus.map((p) => ({ ...p, stale: true }));
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", allStale);
+    expect(answer).toContain("Şu an güncel veri yok.");
+    expect(answer).not.toMatch(/\d+ kişi/);
   });
 
-  it("offers only what the cameras count when it has no data", () => {
-    const answer = fallbackAnswer("Otoparkta boş yer var mı?", campus, NOW);
+  it("never lists one section's places as several busy places", () => {
+    const plaza = [crowd("meydan", "Kütüphane meydanı", "Kütüphane", 20), ...campus];
+    const answer = fallbackAnswer("Kampüs şu an kalabalık mı?", plaza);
+    expect(answer).toContain("Kütüphane meydanı: 20 kişi");
+    expect(answer).not.toContain("Kütüphane yolu");
+    expect(answer).toContain("Taş Kafe önü: 11 kişi");
+  });
+
+  it("does not take students for the student dining hall", () => {
+    const answer = fallbackAnswer("Öğrenciler en çok nerede kalabalık?", campus);
+    expect(answer.split("\n")[1]).toBe("En kalabalık yerler:");
+  });
+
+  it("finds a place named with or without a suffix", () => {
+    const faculty = fallbackAnswer("Fakülte kalabalık mı?", campus);
+    expect(faculty).toContain("Bilişim Fakültesi: 6 kişi");
+    expect(faculty).toContain("Fen-Edebiyat Fakültesi: 2 kişi");
+    expect(fallbackAnswer("Fen Edebiyat kalabalık mı?", campus)).toContain("Fen-Edebiyat Fakültesi: 2 kişi");
+  });
+
+  it("does not take a short word for a place", () => {
+    // "yol" asks about traffic, not about the area "Kütüphane yolu".
+    const answer = fallbackAnswer("Yol trafiği nasıl?", campus);
+    expect(answer).not.toContain("Kütüphane yolu");
+    expect(answer).toContain("Kampüs İçi Yolu");
+  });
+
+  it("offers only what the places cover when it has no data", () => {
+    const crowdOnly = campus.filter((p) => p.kind === "area" || p.kind === "building");
+    const answer = fallbackAnswer("Otoparkta boş yer var mı?", crowdOnly);
     expect(answer).toContain("Bu konuda verim yok");
-    expect(answer).not.toContain("Otopark");
+    expect(answer).not.toContain("otopark");
     expect(answer).toContain("kalabalık");
   });
 });

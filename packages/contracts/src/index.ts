@@ -15,7 +15,10 @@ export type Level = z.infer<typeof Level>;
 export const ReadingSource = z.enum(["simulated", "demo-footage", "camera"]);
 export type ReadingSource = z.infer<typeof ReadingSource>;
 
-/** A camera as the map shows it: where it stands and where it looks. The registry is config/cameras.json. */
+/**
+ * A camera: where it stands, where it looks and the place it feeds. Private: the registry
+ * (config/cameras.json) is read by the API and vision and served to nobody (CLAUDE.md §0.2).
+ */
 export const Camera = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
@@ -29,8 +32,39 @@ export const Camera = z.object({
   fovDeg: z.number().min(10).max(170),
   /** Distance from the camera to the far edge of its view, in metres. */
   rangeM: z.number().min(5).max(150),
+  /** The id of the place in config/places.json that this camera's readings feed. */
+  place: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
+  /** Inside a building: it sends counts only, which light up the whole building. */
+  indoor: z.boolean().optional(),
 });
 export type Camera = z.infer<typeof Camera>;
+
+export const PlaceKind = z.enum(["area", "building", "parking", "road"]);
+export type PlaceKind = z.infer<typeof PlaceKind>;
+
+const LngLat = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]);
+
+/** GeoJSON geometry, [longitude, latitude]: a label point, a footprint or lot, or a road. */
+export const PlaceGeometry = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("Point"), coordinates: LngLat }),
+  z.object({ type: z.literal("Polygon"), coordinates: z.array(z.array(LngLat).min(4)).min(1) }),
+  z.object({ type: z.literal("LineString"), coordinates: z.array(LngLat).min(2) }),
+  z.object({ type: z.literal("MultiLineString"), coordinates: z.array(z.array(LngLat).min(2)).min(1) }),
+]);
+export type PlaceGeometry = z.infer<typeof PlaceGeometry>;
+
+/** What users see: an outdoor area, a building, a parking lot or a road (config/places.json). */
+export const Place = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1),
+  section: z.string().min(1),
+  kind: PlaceKind,
+  geometry: PlaceGeometry,
+});
+export type Place = z.infer<typeof Place>;
 
 /** People in one 3 m cell of the campus grid, smoothed, at the cell's centre. An aggregate, never a person. */
 export const DensityCell = z.object({
@@ -85,18 +119,41 @@ export type ReadingBatch = z.infer<typeof ReadingBatch>;
 /** A camera with no reading for this long is stale (grey). The API's STALE_AFTER_MS defaults to it. */
 export const DEFAULT_STALE_AFTER_MS = 15_000;
 
-/** A camera with its latest reading, as GET /api/cameras returns it. */
-export const LiveCamera = Camera.extend({
-  reading: CameraReading.nullable(),
-  /** True when there is no reading, or the API received the latest one too long ago. */
-  stale: z.boolean(),
-  /**
-   * Milliseconds since the API received the latest reading, by the API's own clock; null without one.
-   * Staleness never compares clocks of different machines (vision PC, API, phone).
-   */
-  ageMs: z.number().int().nonnegative().nullable(),
+/** The campus map, once per app start (GET /api/places): its outline and every place. */
+export const CampusMap = z.object({
+  campus: z.object({ name: z.string().min(1), geometry: PlaceGeometry }),
+  places: z.array(Place),
 });
-export type LiveCamera = z.infer<typeof LiveCamera>;
+export type CampusMap = z.infer<typeof CampusMap>;
+
+/**
+ * A place's live state, built from its cameras' readings. Which cameras feed it, and where they are,
+ * never leave the server.
+ */
+export const LivePlace = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  /** People (areas, buildings) or vehicles (parking, roads); null without a fresh reading. */
+  count: z.number().int().nonnegative().nullable(),
+  level: Level.nullable(),
+  /** Parking lots only: free and total slots. */
+  parking: ParkingState.nullable(),
+  /** True when none of its cameras has a fresh reading ("Görüntü yok"). */
+  stale: z.boolean(),
+  /** Milliseconds since the API received the newest reading behind it, by the API's clock. */
+  ageMs: z.number().int().nonnegative().nullable(),
+  /** True unless every reading behind it comes from a real, permitted camera ("Demo verisi"). */
+  demo: z.boolean(),
+});
+export type LivePlace = z.infer<typeof LivePlace>;
+
+/** Every second (GET /api/live, the "live" socket event): each place's state and the heat. */
+export const LiveSnapshot = z.object({
+  places: z.array(LivePlace),
+  /** The outdoor heat: fresh cameras' cells merged by max per cell. */
+  cells: z.array(DensityCell),
+  at: z.iso.datetime(),
+});
+export type LiveSnapshot = z.infer<typeof LiveSnapshot>;
 
 export const AssistantRequest = z.object({ message: z.string().trim().min(1).max(500) });
 export type AssistantRequest = z.infer<typeof AssistantRequest>;
@@ -108,7 +165,7 @@ export const AssistantResponse = z.object({
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
 
-export const SOCKET_EVENTS = { reading: "reading" } as const;
+export const SOCKET_EVENTS = { live: "live" } as const;
 
 /** The JSON Schemas the vision service's tests check against, keyed by file name. */
 export function jsonSchemas(): Record<string, unknown> {

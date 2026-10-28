@@ -11,6 +11,7 @@ import supervision as sv
 WEIGHTS = Path(__file__).resolve().parents[2] / "models" / "yolo11n.pt"
 PERSON = [0]
 VEHICLES = [1, 2, 3, 5, 7]  # COCO: bicycle, car, motorcycle, bus, truck
+PARKED = [2, 3, 5, 7]  # what takes a parking slot: car, motorcycle, bus, truck
 # One model loads at a time: the first downloads the weights, the others then find the file (#10).
 _LOAD = threading.Lock()
 
@@ -33,16 +34,35 @@ class YoloDetector:
 
 
 def detect_test_boxes(frame: np.ndarray) -> sv.Detections:
-    """For automated tests only (CLAUDE.md §3.4): one person per white rectangle in a synthetic clip."""
+    """For automated tests only (CLAUDE.md §3.4): in a synthetic clip, a white rectangle is a person
+    and a yellow one a car."""
     import cv2
 
+    blue, green, red = (frame[..., i].astype(int) for i in range(3))
     white = (frame.min(axis=2) >= 200).astype(np.uint8)  # every channel bright; grey and colours are not
-    count, _, stats, _ = cv2.connectedComponentsWithStats(white)
-    boxes = [[x, y, x + w, y + h] for x, y, w, h, _ in stats[1:count]]
+    yellow = ((red >= 200) & (green >= 180) & (blue <= 80)).astype(np.uint8)
+    boxes, classes = [], []
+    for mask, class_id in ((white, 0), (yellow, 2)):
+        count, _, stats, _ = cv2.connectedComponentsWithStats(mask)
+        boxes += [[x, y, x + w, y + h] for x, y, w, h, _ in stats[1:count]]
+        classes += [class_id] * (count - 1)
     if not boxes:
         return sv.Detections.empty()
     return sv.Detections(
         xyxy=np.array(boxes, dtype=float),
         confidence=np.ones(len(boxes)),
-        class_id=np.zeros(len(boxes), dtype=int),
+        class_id=np.array(classes, dtype=int),
     )
+
+
+class TestBoxesDetector:
+    """detect_test_boxes, keeping the classes a camera asks for (like YoloDetector)."""
+
+    __test__ = False  # not a pytest class
+
+    def __init__(self, classes: list[int]) -> None:
+        self._classes = classes
+
+    def __call__(self, frame: np.ndarray) -> sv.Detections:
+        detections = detect_test_boxes(frame)
+        return detections[np.isin(detections.class_id, self._classes)] if len(detections) else detections

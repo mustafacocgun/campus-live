@@ -1,5 +1,5 @@
 {
-  "_note": "Camera spots are PLACEHOLDERS (CLAUDE.md §0.5): placed next to OpenStreetMap features (© OpenStreetMap contributors, ODbL), each on a building's facade or a walkway, looking at the space in front of it. No real campus camera exists here. The 7 'Kütüphane meydanı' cameras are the WILDTRACK views around the plaza east of the library; their poses are estimates until a vision tool writes them from the dataset calibration. heading: degrees clockwise from north; fovDeg: horizontal view angle; rangeM: far edge of the view in metres. Shared by services/api and services/vision: ids and kinds must match services/vision/configs.",
+  "_note": "PRIVATE: read by the API and vision, never served (CLAUDE.md §0.2). Camera spots are PLACEHOLDERS (§0.5): the outdoor crowd cameras are hand-placed (the 7 'Kütüphane meydanı' ones are WILDTRACK's views); indoor, parking and traffic cameras come from tools/build_campus.py and OpenStreetMap (© OpenStreetMap contributors, ODbL). heading: degrees clockwise from north; fovDeg: horizontal view angle; rangeM: far edge of the view in metres; place: the place in config/places.json it feeds.",
   "cameras": [
     {
       "id": "kutuphane-meydani-1",
@@ -10,7 +10,8 @@
       "longitude": 30.332652,
       "heading": 180,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-meydani-2",
@@ -21,7 +22,8 @@
       "longitude": 30.332803,
       "heading": 225,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-meydani-3",
@@ -32,7 +34,8 @@
       "longitude": 30.332866,
       "heading": 270,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-meydani-4",
@@ -43,7 +46,8 @@
       "longitude": 30.332803,
       "heading": 315,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-meydani-5",
@@ -54,7 +58,8 @@
       "longitude": 30.332652,
       "heading": 0,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-meydani-6",
@@ -65,7 +70,8 @@
       "longitude": 30.332501,
       "heading": 45,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-meydani-7",
@@ -76,7 +82,8 @@
       "longitude": 30.332501,
       "heading": 135,
       "fovDeg": 80,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-meydani"
     },
     {
       "id": "kutuphane-bati",
@@ -87,7 +94,8 @@
       "longitude": 30.331756,
       "heading": 212,
       "fovDeg": 70,
-      "rangeM": 35
+      "rangeM": 35,
+      "place": "kutuphane-bati-alani"
     },
     {
       "id": "kutuphane-yolu",
@@ -98,7 +106,8 @@
       "longitude": 30.332786,
       "heading": 175,
       "fovDeg": 60,
-      "rangeM": 40
+      "rangeM": 40,
+      "place": "kutuphane-yolu-alani"
     },
     {
       "id": "merkez-kantin",
@@ -109,7 +118,8 @@
       "longitude": 30.331715,
       "heading": 45,
       "fovDeg": 70,
-      "rangeM": 25
+      "rangeM": 25,
+      "place": "merkez-kantin-onu"
     },
     {
       "id": "tas-kafe",
@@ -120,7 +130,8 @@
       "longitude": 30.33316,
       "heading": 350,
       "fovDeg": 70,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "tas-kafe-onu"
     },
     {
       "id": "kantin",
@@ -131,7 +142,8 @@
       "longitude": 30.333775,
       "heading": 299,
       "fovDeg": 70,
-      "rangeM": 25
+      "rangeM": 25,
+      "place": "kantin-onu"
     },
     {
       "id": "yemekhane",
@@ -142,7 +154,8 @@
       "longitude": 30.330775,
       "heading": 109,
       "fovDeg": 70,
-      "rangeM": 35
+      "rangeM": 35,
+      "place": "ogrenci-yemekhanesi-onu"
     },
     {
       "id": "yemekhane-yolu",
@@ -153,7 +166,8 @@
       "longitude": 30.330802,
       "heading": 356,
       "fovDeg": 60,
-      "rangeM": 28
+      "rangeM": 28,
+      "place": "yemekhane-yolu-alani"
     },
     {
       "id": "muhendislik",
@@ -164,7 +178,8 @@
       "longitude": 30.330799,
       "heading": 128,
       "fovDeg": 70,
-      "rangeM": 25
+      "rangeM": 25,
+      "place": "muhendislik-dekanligi-onu"
     },
     {
       "id": "bilisim",
@@ -175,7 +190,8 @@
       "longitude": 30.32623,
       "heading": 99,
       "fovDeg": 70,
-      "rangeM": 40
+      "rangeM": 40,
+      "place": "bilisim-fakultesi-onu"
     },
     {
       "id": "fen-edebiyat",
@@ -186,7 +202,8 @@
       "longitude": 30.329745,
       "heading": 178,
       "fovDeg": 70,
-      "rangeM": 35
+      "rangeM": 35,
+      "place": "fen-edebiyat-fakultesi-onu"
     },
     {
       "id": "rektorluk",
@@ -197,7 +214,8 @@
       "longitude": 30.332901,
       "heading": 20,
       "fovDeg": 70,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "rektorluk-onu"
     },
     {
       "id": "kongre-merkezi",
@@ -208,7 +226,1013 @@
       "longitude": 30.329453,
       "heading": 211,
       "fovDeg": 70,
-      "rangeM": 35
+      "rangeM": 35,
+      "place": "kongre-merkezi-onu"
+    },
+    {
+      "id": "bilgisayar-arastirma-ve-uygulama-merkezi-ic-1",
+      "name": "Bilgisayar Araştırma ve Uygulama Merkezi iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.740893,
+      "longitude": 30.331058,
+      "heading": 142.6,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "bilgisayar-arastirma-ve-uygulama-merkezi",
+      "indoor": true
+    },
+    {
+      "id": "devlet-konservatuvari-ic-1",
+      "name": "Devlet Konservatuvarı iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.738404,
+      "longitude": 30.332796,
+      "heading": 141.5,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "devlet-konservatuvari",
+      "indoor": true
+    },
+    {
+      "id": "fen-edebiyat-fakultesi-ic-1",
+      "name": "Fen Edebiyat Fakültesi iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.744718,
+      "longitude": 30.328259,
+      "heading": 98.3,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "fen-edebiyat-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "fen-edebiyat-fakultesi-ic-2",
+      "name": "Fen Edebiyat Fakültesi iç 2",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.744669,
+      "longitude": 30.32887,
+      "heading": 264.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "fen-edebiyat-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "kampus-kafeterya-ic-1",
+      "name": "Kampüs Kafeterya iç 1",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.743947,
+      "longitude": 30.330219,
+      "heading": 64.9,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kampus-kafeterya",
+      "indoor": true
+    },
+    {
+      "id": "kantin-binasi-ic-1",
+      "name": "Kantin iç 1",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.743322,
+      "longitude": 30.333878,
+      "heading": 54.1,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kantin-binasi",
+      "indoor": true
+    },
+    {
+      "id": "kultur-ve-kongre-merkezi-ic-1",
+      "name": "Kültür ve Kongre Merkezi iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.741276,
+      "longitude": 30.329347,
+      "heading": 80.4,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kultur-ve-kongre-merkezi",
+      "indoor": true
+    },
+    {
+      "id": "kultur-ve-kongre-merkezi-ic-2",
+      "name": "Kültür ve Kongre Merkezi iç 2",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.741067,
+      "longitude": 30.329707,
+      "heading": 318.6,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kultur-ve-kongre-merkezi",
+      "indoor": true
+    },
+    {
+      "id": "kutuphane-ek-bina-ic-1",
+      "name": "Kütüphane Ek Bina iç 1",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.742075,
+      "longitude": 30.332095,
+      "heading": 163.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kutuphane-ek-bina",
+      "indoor": true
+    },
+    {
+      "id": "lumo-coffee-sakarya-kampus-ic-1",
+      "name": "Lumo Coffee Sakarya Kampüs iç 1",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.744303,
+      "longitude": 30.332055,
+      "heading": 167.4,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "lumo-coffee-sakarya-kampus",
+      "indoor": true
+    },
+    {
+      "id": "m7-makine-muhendisligi-ic-1",
+      "name": "M7 Makine Mühendisliği iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.741701,
+      "longitude": 30.327245,
+      "heading": 302.6,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "m7-makine-muhendisligi",
+      "indoor": true
+    },
+    {
+      "id": "sausem-ic-1",
+      "name": "SAUSEM iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.743598,
+      "longitude": 30.339866,
+      "heading": 119.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "sausem",
+      "indoor": true
+    },
+    {
+      "id": "bilisim-fakultesi-ic-1",
+      "name": "Bilişim Fakültesi iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.742281,
+      "longitude": 30.325578,
+      "heading": 95.9,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "bilisim-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "fen-bilimleri-enstitusu-ic-1",
+      "name": "Fen Bilimleri Enstitüsü iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.743014,
+      "longitude": 30.334401,
+      "heading": 293.2,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "fen-bilimleri-enstitusu",
+      "indoor": true
+    },
+    {
+      "id": "hukuk-fakultesi-ic-1",
+      "name": "Hukuk Fakültesi iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.740937,
+      "longitude": 30.336579,
+      "heading": 141.7,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "hukuk-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "m2-binasi-ic-1",
+      "name": "M2 Binası iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.742128,
+      "longitude": 30.33145,
+      "heading": 298.4,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "m2-binasi",
+      "indoor": true
+    },
+    {
+      "id": "m4-binasi-ic-1",
+      "name": "M4 Binası iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.741959,
+      "longitude": 30.330877,
+      "heading": 152.8,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "m4-binasi",
+      "indoor": true
+    },
+    {
+      "id": "m6-binasi-ic-1",
+      "name": "M6 Binası iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.74158,
+      "longitude": 30.330782,
+      "heading": 299.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "m6-binasi",
+      "indoor": true
+    },
+    {
+      "id": "muhendislik-fakultesi-dekanligi-ic-1",
+      "name": "Mühendislik Fakültesi Dekanlığı iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.742421,
+      "longitude": 30.330686,
+      "heading": 297.3,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "muhendislik-fakultesi-dekanligi",
+      "indoor": true
+    },
+    {
+      "id": "personel-yemekhanesi-ic-1",
+      "name": "Personel Yemekhanesi iç 1",
+      "section": "Yemekhane",
+      "kind": "crowd",
+      "latitude": 40.74379,
+      "longitude": 30.327808,
+      "heading": 181.2,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "personel-yemekhanesi",
+      "indoor": true
+    },
+    {
+      "id": "rektorluk-binasi-ic-1",
+      "name": "Rektörlük Binası iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.740846,
+      "longitude": 30.332891,
+      "heading": 25.3,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "rektorluk-binasi",
+      "indoor": true
+    },
+    {
+      "id": "suleyman-demirel-kutuphanesi-ic-1",
+      "name": "Süleyman Demirel Kütüphanesi iç 1",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.74178,
+      "longitude": 30.332045,
+      "heading": 164.2,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "suleyman-demirel-kutuphanesi",
+      "indoor": true
+    },
+    {
+      "id": "ogrenci-yemekhanesi-ic-1",
+      "name": "Öğrenci Yemekhanesi iç 1",
+      "section": "Yemekhane",
+      "kind": "crowd",
+      "latitude": 40.744178,
+      "longitude": 30.330581,
+      "heading": 289.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "ogrenci-yemekhanesi",
+      "indoor": true
+    },
+    {
+      "id": "ilahiyat-fakultesi-ic-1",
+      "name": "İlahiyat Fakültesi iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.743596,
+      "longitude": 30.324249,
+      "heading": 144.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "ilahiyat-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "ilahiyat-fakultesi-ic-2",
+      "name": "İlahiyat Fakültesi iç 2",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.743596,
+      "longitude": 30.324249,
+      "heading": 144.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "ilahiyat-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "sakli-bahce-ic-1",
+      "name": "Saklı Bahçe iç 1",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.740276,
+      "longitude": 30.327502,
+      "heading": 197.6,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "sakli-bahce",
+      "indoor": true
+    },
+    {
+      "id": "sanat-tasarim-ve-mimarlik-fakultesi-ic-1",
+      "name": "Sanat, Tasarım ve Mimarlık Fakültesi iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.739858,
+      "longitude": 30.335269,
+      "heading": 107.5,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "sanat-tasarim-ve-mimarlik-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "t1-ic-1",
+      "name": "T1 iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.740455,
+      "longitude": 30.332092,
+      "heading": 145.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "t1",
+      "indoor": true
+    },
+    {
+      "id": "t3-ic-1",
+      "name": "T3 iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.739909,
+      "longitude": 30.332092,
+      "heading": 318.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "t3",
+      "indoor": true
+    },
+    {
+      "id": "t4-ic-1",
+      "name": "T4 iç 1",
+      "section": "Kampüs binaları",
+      "kind": "crowd",
+      "latitude": 40.739749,
+      "longitude": 30.333797,
+      "heading": 113.2,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "t4",
+      "indoor": true
+    },
+    {
+      "id": "tas-kafe-binasi-ic-1",
+      "name": "Taş Kafe iç 1",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.742739,
+      "longitude": 30.333175,
+      "heading": 170.0,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "tas-kafe-binasi",
+      "indoor": true
+    },
+    {
+      "id": "insan-ve-toplum-bilimleri-fakultesi-ic-1",
+      "name": "İnsan ve Toplum Bilimleri Fakültesi iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.743802,
+      "longitude": 30.33642,
+      "heading": 245.2,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "insan-ve-toplum-bilimleri-fakultesi",
+      "indoor": true
+    },
+    {
+      "id": "insaat-muhendisligi-ic-1",
+      "name": "İnşaat Mühendisliği iç 1",
+      "section": "Fakülteler",
+      "kind": "crowd",
+      "latitude": 40.742475,
+      "longitude": 30.327609,
+      "heading": 135.2,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "insaat-muhendisligi",
+      "indoor": true
+    },
+    {
+      "id": "rektorluk-binasi-otoparki-1",
+      "name": "Rektörlük Binası otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.74206,
+      "longitude": 30.334338,
+      "heading": 184.4,
+      "fovDeg": 80,
+      "rangeM": 79,
+      "place": "rektorluk-binasi-otoparki"
+    },
+    {
+      "id": "kampus-kafeterya-otoparki-1",
+      "name": "Kampüs Kafeterya otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.743728,
+      "longitude": 30.329594,
+      "heading": 149.3,
+      "fovDeg": 80,
+      "rangeM": 44,
+      "place": "kampus-kafeterya-otoparki"
+    },
+    {
+      "id": "m7-makine-muhendisligi-otoparki-1",
+      "name": "M7 Makine Mühendisliği otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.741494,
+      "longitude": 30.328456,
+      "heading": 255.0,
+      "fovDeg": 80,
+      "rangeM": 84,
+      "place": "m7-makine-muhendisligi-otoparki"
+    },
+    {
+      "id": "personel-yemekhanesi-otoparki-1",
+      "name": "Personel Yemekhanesi otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.743615,
+      "longitude": 30.328855,
+      "heading": 284.7,
+      "fovDeg": 80,
+      "rangeM": 66,
+      "place": "personel-yemekhanesi-otoparki"
+    },
+    {
+      "id": "bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-1",
+      "name": "Bilgisayar Araştırma ve Uygulama Merkezi otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740738,
+      "longitude": 30.330698,
+      "heading": 261.9,
+      "fovDeg": 80,
+      "rangeM": 23,
+      "place": "bilgisayar-arastirma-ve-uygulama-merkezi-otoparki"
+    },
+    {
+      "id": "muhendislik-fakultesi-dekanligi-otoparki-1",
+      "name": "Mühendislik Fakültesi Dekanlığı otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.742794,
+      "longitude": 30.330414,
+      "heading": 114.2,
+      "fovDeg": 80,
+      "rangeM": 59,
+      "place": "muhendislik-fakultesi-dekanligi-otoparki"
+    },
+    {
+      "id": "otopark-1",
+      "name": "Otopark kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.748281,
+      "longitude": 30.324813,
+      "heading": 235.1,
+      "fovDeg": 80,
+      "rangeM": 65,
+      "place": "otopark"
+    },
+    {
+      "id": "bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-2-1",
+      "name": "Bilgisayar Araştırma ve Uygulama Merkezi otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740564,
+      "longitude": 30.331401,
+      "heading": 91.6,
+      "fovDeg": 80,
+      "rangeM": 39,
+      "place": "bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-2"
+    },
+    {
+      "id": "bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-3-1",
+      "name": "Bilgisayar Araştırma ve Uygulama Merkezi otoparkı 3 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.741207,
+      "longitude": 30.330891,
+      "heading": 118.9,
+      "fovDeg": 80,
+      "rangeM": 58,
+      "place": "bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-3"
+    },
+    {
+      "id": "sanat-tasarim-ve-mimarlik-fakultesi-otoparki-1",
+      "name": "Sanat, Tasarım ve Mimarlık Fakültesi otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740054,
+      "longitude": 30.334957,
+      "heading": 70.7,
+      "fovDeg": 80,
+      "rangeM": 32,
+      "place": "sanat-tasarim-ve-mimarlik-fakultesi-otoparki"
+    },
+    {
+      "id": "t4-otoparki-1",
+      "name": "T4 otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.739438,
+      "longitude": 30.334473,
+      "heading": 248.7,
+      "fovDeg": 80,
+      "rangeM": 65,
+      "place": "t4-otoparki"
+    },
+    {
+      "id": "suleyman-demirel-kutuphanesi-otoparki-1",
+      "name": "Süleyman Demirel Kütüphanesi otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.741761,
+      "longitude": 30.331543,
+      "heading": 154.9,
+      "fovDeg": 80,
+      "rangeM": 128,
+      "place": "suleyman-demirel-kutuphanesi-otoparki"
+    },
+    {
+      "id": "fen-edebiyat-fakultesi-otoparki-1",
+      "name": "Fen Edebiyat Fakültesi otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744078,
+      "longitude": 30.329078,
+      "heading": 176.4,
+      "fovDeg": 80,
+      "rangeM": 48,
+      "place": "fen-edebiyat-fakultesi-otoparki"
+    },
+    {
+      "id": "personel-yemekhanesi-otoparki-2-1",
+      "name": "Personel Yemekhanesi otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744401,
+      "longitude": 30.327562,
+      "heading": 97.7,
+      "fovDeg": 80,
+      "rangeM": 81,
+      "place": "personel-yemekhanesi-otoparki-2"
+    },
+    {
+      "id": "lumo-coffee-sakarya-kampus-otoparki-1",
+      "name": "Lumo Coffee Sakarya Kampüs otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744784,
+      "longitude": 30.333252,
+      "heading": 76.0,
+      "fovDeg": 80,
+      "rangeM": 71,
+      "place": "lumo-coffee-sakarya-kampus-otoparki"
+    },
+    {
+      "id": "lumo-coffee-sakarya-kampus-otoparki-2-1",
+      "name": "Lumo Coffee Sakarya Kampüs otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744303,
+      "longitude": 30.333385,
+      "heading": 346.9,
+      "fovDeg": 80,
+      "rangeM": 41,
+      "place": "lumo-coffee-sakarya-kampus-otoparki-2"
+    },
+    {
+      "id": "kantin-otoparki-1",
+      "name": "Kantin otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744021,
+      "longitude": 30.333641,
+      "heading": 164.0,
+      "fovDeg": 80,
+      "rangeM": 20,
+      "place": "kantin-otoparki"
+    },
+    {
+      "id": "otopark-2-1",
+      "name": "Otopark 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744803,
+      "longitude": 30.33395,
+      "heading": 257.1,
+      "fovDeg": 80,
+      "rangeM": 40,
+      "place": "otopark-2"
+    },
+    {
+      "id": "fen-bilimleri-enstitusu-otoparki-1",
+      "name": "Fen Bilimleri Enstitüsü otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.741693,
+      "longitude": 30.334752,
+      "heading": 2.1,
+      "fovDeg": 80,
+      "rangeM": 46,
+      "place": "fen-bilimleri-enstitusu-otoparki"
+    },
+    {
+      "id": "rektorluk-binasi-otoparki-2-1",
+      "name": "Rektörlük Binası otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.74087,
+      "longitude": 30.334559,
+      "heading": 337.6,
+      "fovDeg": 80,
+      "rangeM": 38,
+      "place": "rektorluk-binasi-otoparki-2"
+    },
+    {
+      "id": "insaat-muhendisligi-otoparki-1",
+      "name": "İnşaat Mühendisliği otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.742636,
+      "longitude": 30.328004,
+      "heading": 314.9,
+      "fovDeg": 80,
+      "rangeM": 32,
+      "place": "insaat-muhendisligi-otoparki"
+    },
+    {
+      "id": "insaat-muhendisligi-otoparki-2-1",
+      "name": "İnşaat Mühendisliği otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.741967,
+      "longitude": 30.32789,
+      "heading": 298.5,
+      "fovDeg": 80,
+      "rangeM": 18,
+      "place": "insaat-muhendisligi-otoparki-2"
+    },
+    {
+      "id": "lumo-coffee-sakarya-kampus-otoparki-3-1",
+      "name": "Lumo Coffee Sakarya Kampüs otoparkı 3 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.744129,
+      "longitude": 30.331721,
+      "heading": 349.1,
+      "fovDeg": 80,
+      "rangeM": 39,
+      "place": "lumo-coffee-sakarya-kampus-otoparki-3"
+    },
+    {
+      "id": "hukuk-fakultesi-otoparki-1",
+      "name": "Hukuk Fakültesi otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740343,
+      "longitude": 30.336586,
+      "heading": 157.2,
+      "fovDeg": 80,
+      "rangeM": 30,
+      "place": "hukuk-fakultesi-otoparki"
+    },
+    {
+      "id": "fen-bilimleri-enstitusu-otoparki-2-1",
+      "name": "Fen Bilimleri Enstitüsü otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.743259,
+      "longitude": 30.334788,
+      "heading": 321.6,
+      "fovDeg": 80,
+      "rangeM": 24,
+      "place": "fen-bilimleri-enstitusu-otoparki-2"
+    },
+    {
+      "id": "otopark-3-1",
+      "name": "Otopark 3 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.741568,
+      "longitude": 30.338307,
+      "heading": 129.0,
+      "fovDeg": 80,
+      "rangeM": 41,
+      "place": "otopark-3"
+    },
+    {
+      "id": "otopark-4-1",
+      "name": "Otopark 4 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740488,
+      "longitude": 30.338531,
+      "heading": 108.4,
+      "fovDeg": 80,
+      "rangeM": 44,
+      "place": "otopark-4"
+    },
+    {
+      "id": "otopark-5-1",
+      "name": "Otopark 5 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740326,
+      "longitude": 30.338535,
+      "heading": 112.5,
+      "fovDeg": 80,
+      "rangeM": 36,
+      "place": "otopark-5"
+    },
+    {
+      "id": "hukuk-fakultesi-otoparki-2-1",
+      "name": "Hukuk Fakültesi otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.740773,
+      "longitude": 30.336898,
+      "heading": 21.7,
+      "fovDeg": 80,
+      "rangeM": 34,
+      "place": "hukuk-fakultesi-otoparki-2"
+    },
+    {
+      "id": "devlet-konservatuvari-otoparki-1",
+      "name": "Devlet Konservatuvarı otoparkı kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.738743,
+      "longitude": 30.332874,
+      "heading": 144.4,
+      "fovDeg": 80,
+      "rangeM": 30,
+      "place": "devlet-konservatuvari-otoparki"
+    },
+    {
+      "id": "devlet-konservatuvari-otoparki-2-1",
+      "name": "Devlet Konservatuvarı otoparkı 2 kamera",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.73815,
+      "longitude": 30.333044,
+      "heading": 276.0,
+      "fovDeg": 80,
+      "rangeM": 43,
+      "place": "devlet-konservatuvari-otoparki-2"
+    },
+    {
+      "id": "kampus-ici-yolu-1",
+      "name": "Kampüs İçi Yolu kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.743116,
+      "longitude": 30.338501,
+      "heading": 56.9,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-ici-yolu"
+    },
+    {
+      "id": "kampus-ici-yolu-2",
+      "name": "Kampüs İçi Yolu kamera 2",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.743537,
+      "longitude": 30.339352,
+      "heading": 56.9,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-ici-yolu"
+    },
+    {
+      "id": "182-sokak-1",
+      "name": "182. Sokak kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.74356,
+      "longitude": 30.340913,
+      "heading": 162.1,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "182-sokak"
+    },
+    {
+      "id": "universite-caddesi-1",
+      "name": "Üniversite Caddesi kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.744158,
+      "longitude": 30.340242,
+      "heading": 237.8,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "universite-caddesi"
+    },
+    {
+      "id": "kampus-yolu-1-1",
+      "name": "Kampüs yolu 1 kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.739462,
+      "longitude": 30.336644,
+      "heading": 263.0,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-1"
+    },
+    {
+      "id": "kampus-yolu-1-2",
+      "name": "Kampüs yolu 1 kamera 2",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.739659,
+      "longitude": 30.331635,
+      "heading": 310.8,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-1"
+    },
+    {
+      "id": "kampus-yolu-1-3",
+      "name": "Kampüs yolu 1 kamera 3",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.741484,
+      "longitude": 30.326925,
+      "heading": 293.5,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-1"
+    },
+    {
+      "id": "kampus-yolu-2-1",
+      "name": "Kampüs yolu 2 kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.741441,
+      "longitude": 30.326832,
+      "heading": 113.5,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-2"
+    },
+    {
+      "id": "kampus-yolu-2-2",
+      "name": "Kampüs yolu 2 kamera 2",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.739574,
+      "longitude": 30.331625,
+      "heading": 131.5,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-2"
+    },
+    {
+      "id": "kampus-yolu-2-3",
+      "name": "Kampüs yolu 2 kamera 3",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.739382,
+      "longitude": 30.336749,
+      "heading": 83.5,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-2"
+    },
+    {
+      "id": "kampus-yolu-3-1",
+      "name": "Kampüs yolu 3 kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.740504,
+      "longitude": 30.334715,
+      "heading": 273.8,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-3"
+    },
+    {
+      "id": "kampus-yolu-3-2",
+      "name": "Kampüs yolu 3 kamera 2",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.740689,
+      "longitude": 30.332005,
+      "heading": 300.4,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-3"
+    },
+    {
+      "id": "kampus-yolu-3-3",
+      "name": "Kampüs yolu 3 kamera 3",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.742055,
+      "longitude": 30.329864,
+      "heading": 334.9,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-3"
+    },
+    {
+      "id": "kampus-yolu-4-1",
+      "name": "Kampüs yolu 4 kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.737242,
+      "longitude": 30.336649,
+      "heading": 95.1,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-4"
+    },
+    {
+      "id": "kampus-yolu-4-2",
+      "name": "Kampüs yolu 4 kamera 2",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.738207,
+      "longitude": 30.337314,
+      "heading": 298.1,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-4"
+    },
+    {
+      "id": "kampus-yolu-5-1",
+      "name": "Kampüs yolu 5 kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.743471,
+      "longitude": 30.326126,
+      "heading": 100.0,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-5"
+    },
+    {
+      "id": "kampus-yolu-6-1",
+      "name": "Kampüs yolu 6 kamera 1",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.742857,
+      "longitude": 30.340609,
+      "heading": 55.8,
+      "fovDeg": 60,
+      "rangeM": 40,
+      "place": "kampus-yolu-6"
     }
   ]
 }

@@ -28,11 +28,29 @@ downloading the dataset:
 - **Not verified:** whether the world's Z axis points up or down (the projection handles both) and the
   exact frame file names. Whoever downloads the zip checks these and corrects this list.
 
+## Car footage: candidates for parking and traffic (license checked 2026-10-28, per clip at download)
+
+WILDTRACK has no cars. Fixed, elevated parking clips with a free license are rare: these are the best
+found, each license read on Pexels' own pages. Record a clip under "In use" when it is downloaded.
+
+| Clip                                                                                         | For     | Shot                                | License                                                                                                                           |
+| -------------------------------------------------------------------------------------------- | ------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Pexels "Aerial View of Crowded Car Parking Lot" (pexels.com/video/33610407), 23 s, 1080p     | parking | top-down, a hovering (static) drone | Pexels License: "All photos and videos on Pexels are free to use." "Attribution is not required." [EVIDENCED, pexels.com/license] |
+| Pexels "An Aerial View of a Parking Lot with Cars" (pexels.com/video/28125710), 28 s, 4K     | parking | top-down, a hovering drone          | Pexels License [EVIDENCED]                                                                                                        |
+| Pexels "A Footage of a Covered Parking Lot" (pexels.com/video/9100884), 15 s, 4K             | parking | fixed, elevated, a covered lot      | Pexels License [EVIDENCED]                                                                                                        |
+| Pexels "The Intersection of a Street and a Building" (pexels.com/video/18721459), 15 s, 4K   | traffic | fixed, elevated                     | Pexels License [EVIDENCED]                                                                                                        |
+| Pexels "Busy Urban Intersection with Tram and Traffic" (pexels.com/video/33865605), 16 s, 4K | traffic | fixed, elevated                     | Pexels License [EVIDENCED]                                                                                                        |
+
+Short clips are fine: cameras loop them. **Do not use:** Mixkit "Seemingly endless view of a rental
+car park" (its free download is "for Personal Use only, under the Mixkit Restricted License"), and
+Coverr clips (its license forbids use "as a dataset in any form"). Video datasets with parking scenes
+(VIRAT, UFPArk) need a signed agreement or an unverified license; PKLot and CNRPark+EXT are images only.
+
 ## Map tiles
 
-| Service                                                    | Used by     | Terms                                                                                                                                                                                                                                                                                                                                                                | Checked    |
-| ---------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| OpenFreeMap public instance (styles `positron` and `dark`) | the web map | "completely free: there are no limits on the number of map views or requests. There's no registration, no user database, no API keys, and no cookies."; "Is commercial usage allowed? Yes."; "Attribution is required. If you are using MapLibre, they are automatically added" [EVIDENCED, openfreemap.org]; terms of service: provided "as-is," with no warranties | 2026-10-27 |
+| Service                                                                           | Used by                | Terms                                                                                                                                                                                                                                                                                                                                                                | Checked    |
+| --------------------------------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| OpenFreeMap public instance (style `liberty`, darkened in the apps for dark mode) | the web and phone maps | "completely free: there are no limits on the number of map views or requests. There's no registration, no user database, no API keys, and no cookies."; "Is commercial usage allowed? Yes."; "Attribution is required. If you are using MapLibre, they are automatically added" [EVIDENCED, openfreemap.org]; terms of service: provided "as-is," with no warranties | 2026-10-27 |
 
 Map data © OpenStreetMap contributors (ODbL), shown in the map's attribution.
 

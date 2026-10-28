@@ -1,9 +1,10 @@
-import type { ApiResponse, CameraReading, LiveCamera } from "@campus-live/contracts";
+import type { ApiResponse, CameraReading, LiveSnapshot } from "@campus-live/contracts";
 import { SOCKET_EVENTS } from "@campus-live/contracts";
 import { io as connect } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadRegistry, SHARED_CAMERAS_FILE } from "../src/modules/cameras/camera-registry.js";
 import { LiveStore } from "../src/modules/live/live-store.js";
+import { loadPlaces } from "../src/modules/places/place-registry.js";
 import { env, ingest, reading, startServer } from "./helpers.js";
 
 let server: Awaited<ReturnType<typeof startServer>>;
@@ -14,8 +15,8 @@ afterEach(async () => {
   await server.close();
 });
 
-async function cameras(): Promise<LiveCamera[]> {
-  const body = (await (await fetch(`${server.url}/api/cameras`)).json()) as ApiResponse<LiveCamera[]>;
+async function live(): Promise<LiveSnapshot> {
+  const body = (await (await fetch(`${server.url}/api/live`)).json()) as ApiResponse<LiveSnapshot>;
   if (!body.success) throw new Error(body.error.message);
   return body.data;
 }
@@ -53,34 +54,38 @@ describe("POST /internal/readings", () => {
   });
 });
 
-describe("GET /api/cameras", () => {
-  it("serves an ingested reading on GET /api/cameras", async () => {
-    const sent = reading();
-    await ingest(server.url, { readings: [sent] });
-    const parking = (await cameras()).find((camera) => camera.id === "otopark-a");
-    expect(parking).toMatchObject({ name: "Otopark A", kind: "parking", stale: false, reading: sent });
+describe("GET /api/live", () => {
+  it("shows an ingested reading in its place", async () => {
+    await ingest(server.url, { readings: [reading()] });
+    const lot = (await live()).places.find((place) => place.id === "a-otoparki");
+    expect(lot).toMatchObject({ count: 28, level: "medium", parking: { total: 40, free: 12 }, stale: false });
   });
 
-  it("lists cameras without readings as stale", async () => {
-    const all = await cameras();
-    expect(all.map((camera) => camera.id)).toEqual([
-      "kutuphane-giris",
-      "kafe-merkez",
-      "otopark-a",
-      "ana-yol",
+  it("lists every place as stale before any reading", async () => {
+    const { places } = await live();
+    expect(places.map((place) => place.id)).toEqual([
+      "kutuphane-alani",
+      "kafe-alani",
+      "kutuphane-binasi",
+      "a-otoparki",
+      "kampus-ana-caddesi",
     ]);
-    expect(all.every((camera) => camera.stale && camera.reading === null)).toBe(true);
+    expect(places.every((place) => place.stale && place.count === null)).toBe(true);
+  });
+
+  it("has no per-camera route", async () => {
+    expect((await fetch(`${server.url}/api/cameras`)).status).toBe(404);
   });
 });
 
 describe("LiveStore", () => {
-  const store = () => new LiveStore(loadRegistry(env.CAMERAS_FILE), 15_000);
-  const at = (iso: string) => reading({ measuredAt: iso });
+  const store = () => new LiveStore(loadRegistry(env.CAMERAS_FILE), loadPlaces(env.PLACES_FILE), 15_000);
+  const at = (iso: string, count = 28) => reading({ measuredAt: iso, count });
   const ms = (iso: string) => Date.parse(iso);
   const parkingOf = (s: LiveStore, now: string) =>
-    s.snapshot(new Date(now)).find((c) => c.id === "otopark-a")!;
+    s.live(new Date(now)).places.find((place) => place.id === "a-otoparki")!;
 
-  it("marks a camera stale after STALE_AFTER_MS", () => {
+  it("marks a place stale after STALE_AFTER_MS", () => {
     const s = store();
     s.upsert(at("2026-10-27T07:00:00.000Z"), ms("2026-10-27T07:00:00.000Z"));
     expect(parkingOf(s, "2026-10-27T07:00:14.999Z")).toMatchObject({ stale: false, ageMs: 14_999 });
@@ -96,32 +101,31 @@ describe("LiveStore", () => {
 
   it("keeps the newer reading when an older one arrives late", () => {
     const s = store();
-    s.upsert(at("2026-10-27T07:00:05.000Z"), ms("2026-10-27T07:00:05.000Z"));
-    s.upsert(at("2026-10-27T07:00:01.000Z"), ms("2026-10-27T07:00:06.000Z"));
-    expect(parkingOf(s, "2026-10-27T07:00:06.000Z").reading?.measuredAt).toBe("2026-10-27T07:00:05.000Z");
+    s.upsert(at("2026-10-27T07:00:05.000Z", 28), ms("2026-10-27T07:00:05.000Z"));
+    s.upsert(at("2026-10-27T07:00:01.000Z", 30), ms("2026-10-27T07:00:06.000Z"));
+    expect(parkingOf(s, "2026-10-27T07:00:06.000Z").count).toBe(28);
   });
 
   it("a future-dated reading does not block later readings once it is stale", () => {
     const s = store();
     // A vision clock 10 minutes ahead, then corrected: its next readings look "older".
-    s.upsert(at("2026-10-27T07:10:00.000Z"), ms("2026-10-27T07:00:00.000Z"));
-    s.upsert(at("2026-10-27T07:00:20.000Z"), ms("2026-10-27T07:00:20.000Z"));
-    expect(parkingOf(s, "2026-10-27T07:00:20.000Z")).toMatchObject({
-      stale: false,
-      reading: { measuredAt: "2026-10-27T07:00:20.000Z" },
-    });
+    s.upsert(at("2026-10-27T07:10:00.000Z", 30), ms("2026-10-27T07:00:00.000Z"));
+    s.upsert(at("2026-10-27T07:00:20.000Z", 28), ms("2026-10-27T07:00:20.000Z"));
+    expect(parkingOf(s, "2026-10-27T07:00:20.000Z")).toMatchObject({ stale: false, count: 28 });
   });
 });
 
 describe("Socket.IO", () => {
-  it("broadcasts readings over Socket.IO", async () => {
+  it("sends live snapshots only, never a reading", async () => {
     const client = connect(server.url, { transports: ["websocket"] });
+    const events = new Set<string>();
+    client.onAny((event: string) => events.add(event));
     await new Promise<void>((resolve) => client.on("connect", resolve));
-    const received = new Promise<CameraReading>((resolve) => client.on(SOCKET_EVENTS.reading, resolve));
-    const sent = reading();
-    await ingest(server.url, { readings: [sent] });
-    expect(await received).toEqual(sent);
+    await ingest(server.url, { readings: [reading()] });
+    // Over a second and a half, at least one periodic snapshot after the reading arrived.
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
     client.close();
+    expect([...events]).toEqual([SOCKET_EVENTS.live]);
   });
 });
 
@@ -142,10 +146,9 @@ describe("density cells", () => {
   const crowd = (overrides: Partial<CameraReading> = {}) =>
     reading({ cameraId: "kafe-merkez", kind: "crowd", count: 7, parking: undefined, cells, ...overrides });
 
-  it("accepts crowd readings with cells and serves them", async () => {
+  it("accepts crowd readings with cells and serves them as the heat", async () => {
     expect((await ingest(server.url, { readings: [crowd()] })).status).toBe(202);
-    const cafe = (await cameras()).find((camera) => camera.id === "kafe-merkez");
-    expect(cafe?.reading?.cells).toEqual(cells);
+    expect((await live()).cells).toEqual(cells);
   });
 
   it("rejects cells on a non-crowd camera", async () => {

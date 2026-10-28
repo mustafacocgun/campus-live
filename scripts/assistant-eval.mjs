@@ -13,13 +13,21 @@ const QUESTIONS = [
   "Yarınki sınav saat kaçta?", // not in the data: the right answer is "Bu konuda verim yok."
 ];
 
-const cameras = (await (await fetch(`${api}/api/cameras`)).json()).data;
+const { places } = (await (await fetch(`${api}/api/places`)).json()).data;
+const live = (await (await fetch(`${api}/api/live`)).json()).data;
+const states = new Map(live.places.map((state) => [state.id, state]));
 console.log("Live data:");
-for (const c of cameras) {
-  const r = c.reading;
-  const value =
-    !r || c.stale ? "güncel veri yok" : r.parking ? `${r.parking.free}/${r.parking.total} boş` : `${r.count}`;
-  console.log(`  ${c.name}: ${value}${r && !c.stale ? `, ${r.level}, ${r.source}` : ""}`);
+for (const place of places) {
+  const state = states.get(place.id);
+  const fresh = state && !state.stale;
+  const value = !fresh
+    ? "güncel veri yok"
+    : state.parking
+      ? `${state.parking.free}/${state.parking.total} boş`
+      : `${state.count}`;
+  console.log(
+    `  ${place.name} (${place.kind}): ${value}${fresh ? `, ${state.level}${state.demo ? ", demo" : ""}` : ""}`,
+  );
 }
 for (const message of QUESTIONS) {
   const response = await fetch(`${api}/api/assistant/chat`, {

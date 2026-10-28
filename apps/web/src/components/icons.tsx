@@ -1,9 +1,7 @@
-import type { Camera, CameraKind } from "@campus-live/contracts";
+import { PLACE_TOPIC } from "@campus-live/client";
+import type { CameraKind, Place } from "@campus-live/contracts";
 
-/**
- * Hand-drawn 24×24 stroke icons. The path data is exported on its own because the map draws its
- * pins as HTML strings (Leaflet divIcon), not React elements.
- */
+/** Hand-drawn 24×24 stroke icons. */
 export const KIND_ICON_PATH: Record<CameraKind, string> = {
   crowd:
     "M12.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0M3 20a6 6 0 0 1 12 0M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 14.2A6 6 0 0 1 21 20",
@@ -18,8 +16,8 @@ const SECTION_ICON_PATH: Record<string, string> = {
   Kafeler: "M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2M12 3.5v2",
 };
 
-export function iconPathFor(camera: Pick<Camera, "kind" | "section">): string {
-  return SECTION_ICON_PATH[camera.section] ?? KIND_ICON_PATH[camera.kind];
+function iconPathFor(place: Pick<Place, "kind" | "section">): string {
+  return SECTION_ICON_PATH[place.section] ?? KIND_ICON_PATH[PLACE_TOPIC[place.kind]];
 }
 
 export const KIND_LABEL_TR: Record<CameraKind, string> = {
@@ -48,14 +46,14 @@ export function KindIcon({ kind, className = "h-5 w-5" }: { kind: CameraKind; cl
   return <StrokeIcon d={KIND_ICON_PATH[kind]} className={className} />;
 }
 
-export function CameraIcon({
-  camera,
+export function PlaceIcon({
+  place,
   className = "h-5 w-5",
 }: {
-  camera: Pick<Camera, "kind" | "section">;
+  place: Pick<Place, "kind" | "section">;
   className?: string;
 }) {
-  return <StrokeIcon d={iconPathFor(camera)} className={className} />;
+  return <StrokeIcon d={iconPathFor(place)} className={className} />;
 }
 
 /** A map pin with a live dot: the Campus Live mark. */

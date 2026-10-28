@@ -41,6 +41,13 @@ time, error type) on `127.0.0.1:8001`.
 | `VISION_CAMERAS_FILE`       | `configs/cameras.example.yaml` | Camera config (the example runs nothing)      |
 | `VISION_PUBLISH_INTERVAL_S` | `0.5`                          | Seconds between pushes                        |
 
+## Places and cameras on the campus
+
+`config/places.json` (what users see) and the indoor, parking and traffic cameras in
+`config/cameras.json` come from OpenStreetMap through `tools/build_campus.py` (its docstring says how to
+refresh them); hand-placed outdoor cameras are kept. Nothing on SUBÜ's buildings or lots, and no indoor
+camera where people live or sleep.
+
 ## Add a camera
 
 1. **Footage:** put the clip in `videos/` (git-ignored) and give it a line in `docs/data-sources.md`
@@ -54,6 +61,45 @@ time, error type) on `127.0.0.1:8001`.
 4. **Check:** `pytest tests/test_registry_ids.py tests/test_cameras.py`, then run vision and open the
    map: the camera's heat should sit inside its cone. If people land in the wrong place, adjust
    `heading`, `fovDeg` or `rangeM`.
+
+## Kinds of cameras
+
+- **Crowd, outdoors:** people's feet are projected onto the map and sent as 3 m heat cells plus a count.
+- **Crowd, indoors** (`"indoor": true` in `config/cameras.json`): a count only, which lights up the whole
+  building. Only where people study, eat or work: never where they live or sleep.
+- **Parking:** vehicles (car, motorcycle, bus, truck) against the lot's outlined slots; a slot is taken
+  when a vehicle's box covers at least 40 % of it, smoothed per slot. Sends free/total.
+- **Traffic:** vehicles in the camera's `zone` (the road), smoothed; the level comes from `thresholds`.
+
+## Outline a parking clip's slots
+
+Once per clip, on a PC with a screen:
+
+```bash
+python tools/draw_slots.py videos/parking/lot.mp4 --at 2
+```
+
+Click each slot's 4 corners; `u` undoes, `s` saves `videos/parking/lot.mp4.slots.yaml`. Every camera
+that plays this clip gets these slots from `tools/assign_clips.py`.
+
+## Footage for many cameras
+
+Cut long videos into 5-minute clips, at 5 frames a second and 720p, so one PC can play many of them:
+
+```bash
+ffmpeg -i C1.mp4 -vf "fps=5,scale=1280:-2" -an -f segment -segment_time 300 -reset_timestamps 1 C1_%03d.mp4
+```
+
+Name WILDTRACK clips `<view>_<index>` (`C1_000.mp4` … `C7_011.mp4`): the plaza's 7 cameras then play the
+same index from the same start, in sync. Then give every camera a clip, at random but reproducibly:
+
+```bash
+python tools/assign_clips.py --clips videos/wildtrack --out configs/cameras.yaml
+python tools/assign_clips.py --clips videos/parking --kind parking --config configs/cameras.yaml --out configs/cameras.yaml
+python tools/assign_clips.py --clips videos/traffic --kind traffic --config configs/cameras.yaml --out configs/cameras.yaml
+```
+
+Each camera gets a random clip and start (`start_s`); `--seed` picks another draw.
 
 ## Where people land on the map
 
@@ -86,8 +132,9 @@ python tools/make_test_clips.py --out videos/test-clips
 VISION_DETECTOR=test-boxes VISION_CAMERAS_FILE=videos/test-clips/cameras.yaml python -m vision
 ```
 
-White boxes walk across synthetic clips and the readings are labelled `simulated`: for automated
-tests and checks only, never for the demo.
+White boxes walk across synthetic clips (people), yellow boxes park in outlined slots or drive past
+(cars), and the readings are labelled `simulated`: for automated tests and checks only, never for the
+demo.
 
 ## Test
 

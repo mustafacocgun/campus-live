@@ -10,7 +10,8 @@
       "longitude": 30.3306,
       "heading": 0,
       "fovDeg": 70,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kutuphane-alani"
     },
     {
       "id": "kafe-merkez",
@@ -21,7 +22,8 @@
       "longitude": 30.3318,
       "heading": 90,
       "fovDeg": 70,
-      "rangeM": 30
+      "rangeM": 30,
+      "place": "kafe-alani"
     },
     {
       "id": "otopark-a",
@@ -32,7 +34,8 @@
       "longitude": 30.3297,
       "heading": 180,
       "fovDeg": 90,
-      "rangeM": 60
+      "rangeM": 60,
+      "place": "a-otoparki"
     },
     {
       "id": "ana-yol",
@@ -43,7 +46,21 @@
       "longitude": 30.333,
       "heading": 270,
       "fovDeg": 60,
-      "rangeM": 80
+      "rangeM": 80,
+      "place": "kampus-ana-caddesi"
+    },
+    {
+      "id": "kutuphane-ic",
+      "name": "Kütüphane iç",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.7416,
+      "longitude": 30.3318,
+      "heading": 90,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kutuphane-binasi",
+      "indoor": true
     }
   ]
 }

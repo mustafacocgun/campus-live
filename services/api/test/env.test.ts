@@ -9,6 +9,8 @@ describe("EnvSchema", () => {
   });
 
   it("accepts a real token", () => {
-    expect(EnvSchema.safeParse({ VISION_INGEST_TOKEN: "3f9c2a7e1b8d4c6f0a5e9b2d7c1f8a3e" }).success).toBe(true);
+    expect(EnvSchema.safeParse({ VISION_INGEST_TOKEN: "3f9c2a7e1b8d4c6f0a5e9b2d7c1f8a3e" }).success).toBe(
+      true,
+    );
   });
 });

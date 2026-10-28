@@ -8,6 +8,7 @@ import { EnvSchema } from "../src/config/env.js";
 import { loadRegistry } from "../src/modules/cameras/camera-registry.js";
 import { attachLiveSocket } from "../src/modules/live/live-socket.js";
 import { LiveStore } from "../src/modules/live/live-store.js";
+import { loadPlaces } from "../src/modules/places/place-registry.js";
 
 export const TOKEN = "test-token-1234567890";
 
@@ -15,6 +16,7 @@ export const TOKEN = "test-token-1234567890";
 export const env = EnvSchema.parse({
   VISION_INGEST_TOKEN: TOKEN,
   CAMERAS_FILE: fileURLToPath(new URL("./fixtures/cameras.json", import.meta.url)),
+  PLACES_FILE: fileURLToPath(new URL("./fixtures/places.json", import.meta.url)),
 });
 
 export function reading(overrides: Partial<CameraReading> = {}): CameraReading {
@@ -33,8 +35,9 @@ export function reading(overrides: Partial<CameraReading> = {}): CameraReading {
 /** The real app and Socket.IO on a random port, with the test camera registry. */
 export async function startServer(llm: LlmClient | null = null) {
   const registry = loadRegistry(env.CAMERAS_FILE);
-  const store = new LiveStore(registry, env.STALE_AFTER_MS);
-  const server = createServer(createApp({ registry, store, env, llm }));
+  const places = loadPlaces(env.PLACES_FILE);
+  const store = new LiveStore(registry, places, env.STALE_AFTER_MS);
+  const server = createServer(createApp({ registry, places, store, env, llm }));
   const io = attachLiveSocket(server, store, ["http://localhost:3000"]);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

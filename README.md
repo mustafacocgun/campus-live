@@ -6,15 +6,17 @@ it in Turkish ("Otopark A'da boş yer var mı?").
 
 There is no access to campus cameras. The cameras are **demo videos** (licensed footage or our own
 recordings) placed at campus positions, and every reading is labelled as demo data. Video frames never
-leave the vision service; the apps get numbers only. Design: [docs/architecture.md](docs/architecture.md).
+leave the vision service; the apps get numbers only. The map shows places (outdoor areas, buildings,
+parking lots, roads) and the crowd's heat, never where a camera is. Design:
+[docs/architecture.md](docs/architecture.md).
 
 ## Repository
 
 | Folder                                     | Stack                             | Purpose                                           |
 | ------------------------------------------ | --------------------------------- | ------------------------------------------------- |
-| [`apps/web`](apps/web)                     | Next.js 16, MapLibre GL           | Live heat map and assistant in the browser        |
+| [`apps/web`](apps/web)                     | Next.js 16, MapLibre GL           | Live 3D campus map and assistant in the browser   |
 | [`apps/mobile`](apps/mobile)               | Expo SDK 58 (React Native)        | Live map and assistant on phones                  |
-| [`services/api`](services/api)             | Node 22, Express 5, Socket.IO     | Camera registry, live state, assistant            |
+| [`services/api`](services/api)             | Node 22, Express 5, Socket.IO     | Places, live state by place, assistant            |
 | [`services/vision`](services/vision)       | Python 3.12, YOLO11n, supervision | Camera workers: video in, readings out            |
 | [`packages/contracts`](packages/contracts) | zod 4                             | The shared types, plus JSON Schema for Python     |
 | [`packages/client`](packages/client)       | TypeScript                        | API access and map logic shared by web and mobile |
@@ -45,8 +47,9 @@ npm run dev                                   # api :4000 + vision :8001 (YOLO) 
 `npm run dev` finds `services/vision/.venv` by itself (no need to activate it in that terminal). Open
 http://localhost:3000 for the live map. For the phone app, copy `apps/mobile/.env.example` to
 `apps/mobile/.env`, set `EXPO_PUBLIC_API_URL` to this computer's LAN address and run `npm run dev:mobile` (a development build, not Expo Go: [apps/mobile/README.md](apps/mobile/README.md)). Vision counts only
-the cameras that have footage in `services/vision/configs/cameras.yaml`; the others stay grey on the map
-(set-up, WILDTRACK and test clips without a GPU: [services/vision/README.md](services/vision/README.md)).
+the cameras that have footage in `services/vision/configs/cameras.yaml`; a place without one stays grey on
+the map (set-up, WILDTRACK, footage for many cameras, parking slots and test clips without a GPU:
+[services/vision/README.md](services/vision/README.md)).
 The assistant answers rule-based until `LLM_*` is set in `services/api/.env`.
 
 | Command                           | What it does                                                            |
@@ -55,7 +58,7 @@ The assistant answers rule-based until `LLM_*` is set in `services/api/.env`.
 | `npm run dev:mobile`              | The Expo app                                                            |
 | `npm run typecheck`               | Every TypeScript workspace                                              |
 | `npm test`                        | contracts, client and API tests (vision: `pytest` in `services/vision`) |
-| `npm run e2e`                     | Real API + vision on synthetic test clips: fresh readings and an answer |
+| `npm run e2e`                     | Real API + vision on test clips: places live, cars seen, no camera leak |
 | `node scripts/assistant-eval.mjs` | 5 real Turkish questions next to the live data (run with the LLM key)   |
 
 To add a camera (its clip and license line, its spot and direction on the map, its source), follow

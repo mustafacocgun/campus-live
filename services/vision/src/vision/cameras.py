@@ -1,5 +1,6 @@
 """Per-camera processing config, loaded from configs/*.yaml."""
 
+import math
 from pathlib import Path
 from typing import Self
 
@@ -55,8 +56,12 @@ class CameraConfig(BaseModel):
     kind: CameraKind
     # A video file path or a webcam index. A camera without one does not run (grey on the map).
     source: str | None = None
+    # Seconds into the clip to start from, so cameras sharing footage do not show the same moment.
+    start_s: float = Field(default=0.0, ge=0)
     sample_fps: float = Field(default=5.0, gt=0, le=30)
     zone: list[Point] | None = None
+    # Parking cameras: each slot's outline, x, y as fractions of the frame (tools/draw_slots.py).
+    slots: list[list[Point]] | None = None
     thresholds: Thresholds | None = None
     wildtrack: WildtrackCalibration | None = None
 
@@ -67,9 +72,23 @@ class CameraConfig(BaseModel):
                 raise ValueError("a zone needs at least 3 points")
             if any(not (0 <= x <= 1 and 0 <= y <= 1) for x, y in self.zone):
                 raise ValueError("zone points are fractions of the frame, between 0 and 1")
+        for slot in self.slots or []:
+            if len(slot) < 3 or any(not (0 <= x <= 1 and 0 <= y <= 1) for x, y in slot):
+                raise ValueError("a slot needs at least 3 points, as fractions of the frame")
+            if _hull_area(slot) < 1e-6:
+                raise ValueError("a slot's corners lie on one line: outline it again (tools/draw_slots.py)")
         if self.kind in ("crowd", "traffic") and self.thresholds is None:
             raise ValueError(f"{self.kind} cameras need thresholds")
         return self
+
+
+def _hull_area(points: list[Point]) -> float:
+    """The area the points enclose, whatever order they come in (corners sorted around their middle)."""
+    cx = sum(x for x, _ in points) / len(points)
+    cy = sum(y for _, y in points) / len(points)
+    ring = sorted(points, key=lambda p: math.atan2(p[1] - cy, p[0] - cx))
+    pairs = zip(ring, ring[1:] + ring[:1], strict=True)
+    return abs(sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in pairs)) / 2
 
 
 def load_cameras(path: str | Path) -> list[CameraConfig]:

@@ -1,8 +1,9 @@
 # Campus Live mobile
 
-Expo SDK 58 (React Native, expo-router). Two tabs: **Harita**, the live campus map (the crowd's heat
-cloud, each camera's view cone and its dot), and **Asistan**, which answers questions from the live
-data. Data comes only from the API through `@campus-live/client`.
+Expo SDK 58 (React Native, expo-router). Two tabs: **Harita**, the live campus map on OpenFreeMap
+Liberty, in 3D or flat (the crowd's heat cloud, buildings lit by their crowd, parking lots and roads in
+their level's color, each place's name and value; never a camera), and **Asistan**, which answers
+questions from the live data. Data comes only from the API through `@campus-live/client`.
 
 ## A development build, not Expo Go
 

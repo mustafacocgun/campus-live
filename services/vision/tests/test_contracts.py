@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from conftest import NOW, REPO_ROOT
-from vision.contracts import CameraReading, DensityCell, ParkingState
+from vision.contracts import Camera, CameraReading, DensityCell, ParkingState
 
 SCHEMA = json.loads((REPO_ROOT / "packages/contracts/schemas/camera-reading.schema.json").read_text())
 
@@ -80,3 +80,22 @@ def test_model_rejects_cells_on_parking() -> None:
             source="demo-footage",
             measured_at=NOW,
         )
+
+
+def test_camera_knows_its_place_and_whether_it_is_indoor() -> None:
+    camera = Camera.model_validate(
+        {
+            "id": "muhendislik-ic-1",
+            "name": "Mühendislik iç 1",
+            "section": "Fakülteler",
+            "kind": "crowd",
+            "latitude": 40.7425,
+            "longitude": 30.3305,
+            "heading": 90,
+            "fovDeg": 90,
+            "rangeM": 15,
+            "place": "muhendislik",
+            "indoor": True,
+        }
+    )
+    assert (camera.place, camera.indoor) == ("muhendislik", True)

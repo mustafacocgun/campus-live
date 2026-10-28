@@ -67,6 +67,8 @@ class CameraWorker(WorkerBase):
             if not capture.isOpened():
                 raise RuntimeError("could not open the video source")
             fps = capture.get(cv2.CAP_PROP_FPS) or 30.0
+            if self.camera.start_s:
+                capture.set(cv2.CAP_PROP_POS_MSEC, self.camera.start_s * 1000)
             stride = max(1, round(fps / self.camera.sample_fps))
             is_file = isinstance(self.source, str)
             while not self._stop.is_set():

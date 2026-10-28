@@ -1,6 +1,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { AssistantRequest, Camera, CameraReading, jsonSchemas } from "../src/index.js";
+import { z } from "zod";
+import {
+  AssistantRequest,
+  Camera,
+  CameraReading,
+  CampusMap,
+  jsonSchemas,
+  LiveSnapshot,
+  Place,
+} from "../src/index.js";
 
 const crowd = {
   cameraId: "kutuphane-giris",
@@ -103,5 +112,106 @@ describe("JSON Schema for the vision service", () => {
       const committed: unknown = JSON.parse(readFileSync(`schemas/${name}.schema.json`, "utf8"));
       expect(committed, `schemas/${name}.schema.json is stale: run npm run schemas`).toEqual(schema);
     }
+  });
+});
+
+describe("places and live snapshots", () => {
+  const library = {
+    id: "kutuphane",
+    name: "Kütüphane",
+    section: "Kütüphane",
+    kind: "building",
+    geometry: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [30.3318, 40.7415],
+          [30.3324, 40.7415],
+          [30.3324, 40.7419],
+          [30.3318, 40.7415],
+        ],
+      ],
+    },
+  };
+  const live = {
+    id: "kutuphane",
+    count: 41,
+    level: "high",
+    parking: null,
+    stale: false,
+    ageMs: 1_200,
+    demo: true,
+  };
+
+  it("accepts a live snapshot of places' states and the merged heat", () => {
+    const snapshot = {
+      places: [live],
+      cells: [{ lat: 40.742, lng: 30.332, weight: 1 }],
+      at: "2026-10-28T07:00:00Z",
+    };
+    expect(LiveSnapshot.safeParse(snapshot).success).toBe(true);
+    // Each second carries state only: the shapes come once, with the campus map.
+    expect(
+      LiveSnapshot.parse({ ...snapshot, places: [{ ...library, ...live }] }).places[0],
+    ).not.toHaveProperty("geometry");
+  });
+
+  it("accepts the campus map: its outline and every place", () => {
+    const map = { campus: { name: "Sakarya Üniversitesi", geometry: library.geometry }, places: [library] };
+    expect(CampusMap.safeParse(map).success).toBe(true);
+  });
+
+  it("rejects a place geometry that is not a known shape", () => {
+    const circle = { ...library, geometry: { type: "Circle", coordinates: [30.332, 40.742] } };
+    expect(Place.safeParse(circle).success).toBe(false);
+  });
+
+  it("a snapshot schema has no camera fields", () => {
+    // Where cameras are never leaves the server (CLAUDE.md §0.2): not even a field for it.
+    const names = new Set<string>();
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) node.forEach(walk);
+      else if (node && typeof node === "object") {
+        for (const [key, value] of Object.entries(node)) {
+          if (key === "properties" && value && typeof value === "object") {
+            Object.keys(value).forEach((name) => names.add(name));
+          }
+          walk(value);
+        }
+      }
+    };
+    walk(z.toJSONSchema(LiveSnapshot));
+    walk(z.toJSONSchema(CampusMap));
+    expect(names.has("weight")).toBe(true); // the walk reaches nested objects
+    for (const forbidden of [
+      "cameraId",
+      "camera",
+      "cameras",
+      "latitude",
+      "longitude",
+      "heading",
+      "fovDeg",
+      "rangeM",
+    ]) {
+      expect(names.has(forbidden), forbidden).toBe(false);
+    }
+  });
+
+  it("a camera names the place it feeds and may be indoor", () => {
+    const camera = {
+      id: "muhendislik-ic-1",
+      name: "Mühendislik iç 1",
+      section: "Fakülteler",
+      kind: "crowd",
+      latitude: 40.7425,
+      longitude: 30.3305,
+      heading: 90,
+      fovDeg: 90,
+      rangeM: 15,
+      place: "muhendislik",
+      indoor: true,
+    };
+    expect(Camera.parse(camera)).toMatchObject({ place: "muhendislik", indoor: true });
+    expect(Camera.safeParse({ ...camera, place: "Mühendislik" }).success).toBe(false);
   });
 });

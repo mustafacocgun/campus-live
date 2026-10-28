@@ -1,0 +1,89 @@
+{
+  "_note": "Test places for the API's tests only; none shares an id or a coordinate with a test camera.",
+  "campus": {
+    "name": "Test kampüsü",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [30.328, 40.7395],
+          [30.335, 40.7395],
+          [30.335, 40.744],
+          [30.328, 40.744],
+          [30.328, 40.7395]
+        ]
+      ]
+    }
+  },
+  "places": [
+    {
+      "id": "kutuphane-alani",
+      "name": "Kütüphane girişi",
+      "section": "Kütüphane",
+      "kind": "area",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.331, 40.7415]
+      }
+    },
+    {
+      "id": "kafe-alani",
+      "name": "Merkez kafe",
+      "section": "Kafeler",
+      "kind": "area",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.332, 40.7421]
+      }
+    },
+    {
+      "id": "kutuphane-binasi",
+      "name": "Kütüphane",
+      "section": "Kütüphane",
+      "kind": "building",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.3315, 40.7414],
+            [30.3322, 40.7414],
+            [30.3322, 40.7419],
+            [30.3315, 40.7419],
+            [30.3315, 40.7414]
+          ]
+        ]
+      }
+    },
+    {
+      "id": "a-otoparki",
+      "name": "Otopark A",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.3294, 40.7428],
+            [30.33, 40.7428],
+            [30.33, 40.7434],
+            [30.3294, 40.7434],
+            [30.3294, 40.7428]
+          ]
+        ]
+      }
+    },
+    {
+      "id": "kampus-ana-caddesi",
+      "name": "Kampüs ana yolu",
+      "section": "Yollar",
+      "kind": "road",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [30.3325, 40.7403],
+          [30.334, 40.7408]
+        ]
+      }
+    }
+  ]
+}
