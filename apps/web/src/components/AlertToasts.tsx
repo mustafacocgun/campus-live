@@ -54,7 +54,7 @@ export function AlertToasts({
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed right-4 bottom-4 z-[1200] flex flex-col items-end gap-2"
+      className="on-page pointer-events-none fixed right-4 bottom-4 z-[1200] flex flex-col items-end gap-2"
     >
       {items.map((notification) => (
         <Toast

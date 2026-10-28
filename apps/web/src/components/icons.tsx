@@ -132,3 +132,82 @@ export function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
 export function MailIcon({ className = "h-4 w-4" }: { className?: string }) {
   return <StrokeIcon d="M4 6h16v12H4zM4 7l8 6 8-6" className={className} />;
 }
+
+/** Campus buildings: the Campus Live mark in the top bar. */
+export function CampusIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <StrokeIcon
+      d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-4h6v4M9 10h.01M12 10h.01M15 10h.01M9 13.5h.01M12 13.5h.01M15 13.5h.01"
+      className={className}
+    />
+  );
+}
+
+export function UserIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return <StrokeIcon d="M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4.5 20a7.5 7.5 0 0 1 15 0" className={className} />;
+}
+
+export function SearchIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0M20 20l-4.5-4.5" className={className} />;
+}
+
+export function ShieldIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6zM9 12l2 2 4-4" className={className} />;
+}
+
+export function InfoIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M12 11v5M12 8h.01" className={className} />;
+}
+
+export function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M19 12H5M11 6l-6 6 6 6" className={className} />;
+}
+
+export function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M5 12h14M13 6l6 6-6 6" className={className} />;
+}
+
+/** The light theme. */
+export function SunIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <StrokeIcon
+      d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+      className={className}
+    />
+  );
+}
+
+/** The dark theme. */
+export function MoonIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return <StrokeIcon d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z" className={className} />;
+}
+
+/** Make a panel larger: arrows out to the corners. */
+export function ExpandIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" className={className} />;
+}
+
+/** Back to its usual size: arrows in from the corners. */
+export function CollapseIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M20 10h-6V4M14 10l7-7M4 14h6v6M10 14l-7 7" className={className} />;
+}
+
+/** Start over: a pencil on a page. */
+export function NewChatIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <StrokeIcon
+      d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6M17.5 3.5l3 3L12 15H9v-3z"
+      className={className}
+    />
+  );
+}
+
+/** Settings: a gear. */
+export function GearIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <StrokeIcon
+      d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0M12 2.5l1.6 2.3 2.8-.5.9 2.7 2.6 1.1-.6 2.8 1.8 2.2-1.8 2.2.6 2.8-2.6 1.1-.9 2.7-2.8-.5L12 21.5l-1.6-2.3-2.8.5-.9-2.7-2.6-1.1.6-2.8L2.9 12l1.8-2.2-.6-2.8 2.6-1.1.9-2.7 2.8.5z"
+      className={className}
+    />
+  );
+}

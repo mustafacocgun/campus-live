@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Overpass } from "next/font/google";
+import { Inter } from "next/font/google";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 // Self-hosted at build time: browsers never ask Google for it. latin-ext carries ş, ğ, ı and İ.
-const overpass = Overpass({ subsets: ["latin", "latin-ext"], variable: "--font-overpass" });
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "Campus Live",
@@ -12,7 +13,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="tr" className={overpass.variable}>
+    // The head script sets data-theme before React hydrates: the attribute differs on purpose.
+    <html lang="tr" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

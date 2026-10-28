@@ -43,7 +43,7 @@ export function AlertSettings({ open, onClose }: { open: boolean; onClose: () =>
       ref={dialog}
       onClose={onClose}
       aria-labelledby="alert-settings-title"
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[min(38rem,calc(100vw-2rem))] overflow-y-auto rounded-3xl border border-line bg-surface p-0 text-foreground shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      className="on-page m-auto max-h-[calc(100dvh-2rem)] w-[min(38rem,calc(100vw-2rem))] overflow-y-auto rounded-3xl border border-line bg-surface p-0 text-foreground shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
       {open && <SettingsBody onClose={onClose} />}
     </dialog>
