@@ -10,8 +10,10 @@ import {
   ExpandIcon,
   KindIcon,
   LocateIcon,
+  MinusIcon,
   NewChatIcon,
   PinIcon,
+  PlusIcon,
   SendIcon,
   SparkleIcon,
 } from "./icons";
@@ -71,6 +73,8 @@ export function AssistantPanel({
   onShowPlace,
   expanded = false,
   onToggleExpand,
+  minimized = false,
+  onToggleMinimize,
 }: {
   me: MyLocation | null;
   picking: boolean;
@@ -80,6 +84,9 @@ export function AssistantPanel({
   /** The panel fills the side panel; the place list is folded away. */
   expanded?: boolean;
   onToggleExpand?: () => void;
+  /** Only the header shows; the place list takes the room. */
+  minimized?: boolean;
+  onToggleMinimize?: () => void;
 }) {
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -141,7 +148,11 @@ export function AssistantPanel({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+    <div
+      className={`flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card ${
+        minimized ? "" : "min-h-0 flex-1"
+      }`}
+    >
       {/* The assistant's own header: the one navy surface in the side panel, so it reads as the feature. */}
       <div className="flex items-center gap-3 bg-linear-to-br from-accent to-accent-2 px-4 py-3 text-white">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
@@ -167,13 +178,25 @@ export function AssistantPanel({
             <NewChatIcon />
           </button>
         )}
+        {onToggleMinimize && (
+          <button
+            type="button"
+            onClick={onToggleMinimize}
+            aria-label={minimized ? "Asistanı aç" : "Asistanı küçült"}
+            aria-expanded={!minimized}
+            title={minimized ? "Aç" : "Küçült"}
+            className={HEADER_BUTTON}
+          >
+            {minimized ? <PlusIcon /> : <MinusIcon />}
+          </button>
+        )}
         {onToggleExpand && (
           <button
             type="button"
             onClick={onToggleExpand}
-            aria-label={expanded ? "Asistanı küçült" : "Asistanı genişlet"}
+            aria-label={expanded ? "Asistanı normal boyuta getir" : "Asistanı genişlet"}
             aria-pressed={expanded}
-            title={expanded ? "Küçült" : "Genişlet"}
+            title={expanded ? "Normal boyut" : "Genişlet"}
             className={`${HEADER_BUTTON} hidden lg:grid`}
           >
             {expanded ? <CollapseIcon /> : <ExpandIcon />}
@@ -181,7 +204,11 @@ export function AssistantPanel({
         )}
       </div>
 
-      <div ref={log} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+      {/* Folded, only the header stays; the conversation is kept for when it opens again. */}
+      <div
+        ref={log}
+        className={`min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm ${minimized ? "hidden" : ""}`}
+      >
         {!turns.length && !busy && (
           <div className="space-y-4">
             <div className="flex items-start gap-3">
@@ -264,7 +291,9 @@ export function AssistantPanel({
         )}
       </div>
 
-      <div className="space-y-2.5 border-t border-line bg-surface-2 px-4 pt-3 pb-4">
+      <div
+        className={`space-y-2.5 border-t border-line bg-surface-2 px-4 pt-3 pb-4 ${minimized ? "hidden" : ""}`}
+      >
         {turns.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-[11px] font-semibold tracking-wide text-muted uppercase">Hızlı sorular</p>

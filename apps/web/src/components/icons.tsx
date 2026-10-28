@@ -192,6 +192,16 @@ export function CollapseIcon({ className = "h-4 w-4" }: { className?: string }) 
   return <StrokeIcon d="M20 10h-6V4M14 10l7-7M4 14h6v6M10 14l-7 7" className={className} />;
 }
 
+/** Fold a panel down to its header. */
+export function MinusIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M5 12h14" className={className} />;
+}
+
+/** Open a folded panel again. */
+export function PlusIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return <StrokeIcon d="M12 5v14M5 12h14" className={className} />;
+}
+
 /** Start over: a pencil on a page. */
 export function NewChatIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
