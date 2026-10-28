@@ -1,6 +1,7 @@
 {
   "name": "@campus-live/client",
   "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "description": "API access and live-map logic shared by the Campus Live web and mobile apps",
   "type": "module",

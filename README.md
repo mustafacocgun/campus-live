@@ -65,3 +65,23 @@ To add a camera (its clip and license line, its spot and direction on the map, i
 [services/vision/README.md](services/vision/README.md#add-a-camera).
 
 Working rules for this repo (people and coding assistants alike): [CLAUDE.md](CLAUDE.md).
+
+## License
+
+Campus Live is free software under the **GNU Affero General Public License v3.0 or later**
+([LICENSE](LICENSE)), copyright © 2026 the Campus Live contributors. You may use, change and share it;
+if you run a changed version for others over a network, you must offer them its source code.
+
+Why the AGPL: the vision service runs Ultralytics YOLO, which is AGPL-3.0, and Ultralytics asks for the
+whole application that uses it to be released as source. It lists university work and open-source
+applications as the fit. A commercial or closed-source deployment needs an Ultralytics Enterprise
+license, or a detector under another license (`services/vision` reaches YOLO through one detector
+interface).
+
+Not covered by [LICENSE](LICENSE):
+
+- `config/places.json` and `config/cameras.json` hold data built from OpenStreetMap: © OpenStreetMap
+  contributors, under the [Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL).
+  Changed versions of that data may be shared only under the ODbL.
+- Footage, datasets and model weights are never in the repository; each keeps its own license, listed
+  in [docs/data-sources.md](docs/data-sources.md).
