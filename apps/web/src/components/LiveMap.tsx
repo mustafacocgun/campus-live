@@ -36,6 +36,9 @@ const GLIDE_MS = 500;
 const BASE_BUILDINGS = "building";
 const BASE_BUILDINGS_3D = "building-3d";
 const PITCH_3D = 50;
+// Left alone this long, the map slowly turns around its center: a full turn in four minutes.
+const IDLE_MS = 10_000;
+const TURN_DEG_PER_S = 1.5;
 // Our layers a click selects a place from.
 const CLICKABLE = ["lots-fill", "roads-line", "buildings-fill", "buildings-3d", "labels-dot", "labels-text"];
 
@@ -544,6 +547,40 @@ export default function LiveMap({
     }
     map.easeTo({ pitch: solid ? PITCH_3D : 0, duration: reducedMotion() ? 0 : 600 });
   }, [mode, loaded]);
+
+  // Left alone, the map slowly turns. A touch, click, scroll, key or pointer move on it stops the turn
+  // and restarts the wait; so does a new selection, position or 2D/3D mode (the effect runs again).
+  // Never with reduced motion, and not while the user picks their position.
+  useEffect(() => {
+    const map = mapRef.current;
+    const element = container.current;
+    if (!map || !element || picking || reducedMotion()) return;
+    let timer = 0;
+    let frame = 0;
+    let last = 0;
+    const turn = (now: number) => {
+      // A fly to a place or the tilt runs first: a bearing change now would cut it short.
+      if (!map.isMoving()) map.setBearing(map.getBearing() + ((now - last) / 1000) * TURN_DEG_PER_S);
+      last = now;
+      frame = requestAnimationFrame(turn);
+    };
+    const rest = () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        last = performance.now();
+        frame = requestAnimationFrame(turn);
+      }, IDLE_MS);
+    };
+    const events = ["pointerdown", "pointermove", "wheel", "keydown", "touchstart"] as const;
+    for (const name of events) element.addEventListener(name, rest, { passive: true });
+    rest();
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+      for (const name of events) element.removeEventListener(name, rest);
+    };
+  }, [loaded, picking, selectedId, me, mode]);
 
   // The heat glides from what is on screen now (even mid-glide) to the new cells.
   useEffect(() => {
