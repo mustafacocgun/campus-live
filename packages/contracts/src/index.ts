@@ -155,19 +155,6 @@ export const LiveSnapshot = z.object({
 });
 export type LiveSnapshot = z.infer<typeof LiveSnapshot>;
 
-/** A camera with its latest reading, as GET /api/cameras returns it. */
-export const LiveCamera = Camera.extend({
-  reading: CameraReading.nullable(),
-  /** True when there is no reading, or the API received the latest one too long ago. */
-  stale: z.boolean(),
-  /**
-   * Milliseconds since the API received the latest reading, by the API's own clock; null without one.
-   * Staleness never compares clocks of different machines (vision PC, API, phone).
-   */
-  ageMs: z.number().int().nonnegative().nullable(),
-});
-export type LiveCamera = z.infer<typeof LiveCamera>;
-
 export const AssistantRequest = z.object({ message: z.string().trim().min(1).max(500) });
 export type AssistantRequest = z.infer<typeof AssistantRequest>;
 
@@ -178,7 +165,7 @@ export const AssistantResponse = z.object({
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
 
-export const SOCKET_EVENTS = { reading: "reading", live: "live" } as const;
+export const SOCKET_EVENTS = { live: "live" } as const;
 
 /** The JSON Schemas the vision service's tests check against, keyed by file name. */
 export function jsonSchemas(): Record<string, unknown> {

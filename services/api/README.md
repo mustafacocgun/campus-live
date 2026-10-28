@@ -11,15 +11,14 @@ npm run dev -w @campus-live/api # http://localhost:4000, on every interface so p
 npm test -w @campus-live/api
 ```
 
-| Route                                   | Who calls it       | What it does                                                                                                               |
-| --------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/health`                       | anyone             | `{status: "ok"}`                                                                                                           |
-| `GET /api/places`                       | web, mobile        | The campus outline and every place (area, building, parking lot, road) with its geometry; fetched once                     |
-| `GET /api/live`                         | web, mobile        | `{places, cells, at}`: each place's count, level, free slots, `stale` and age, and the outdoor heat merged by max per cell |
-| Socket.IO `live`                        | web, mobile        | The same snapshot, on connect and every second                                                                             |
-| `POST /internal/readings`               | the vision service | `Bearer VISION_INGEST_TOKEN` + `{readings}`; 202 `{accepted, rejected}`, 401, 400, or 422 if none is accepted              |
-| `POST /api/assistant/chat`              | web, mobile        | `{message}` → `{answer, via}`: the LLM grounded on the places, or the rule-based fallback; 10 per minute per client        |
-| `GET /api/cameras`, Socket.IO `reading` | (old apps)         | Per camera, with positions: removed once web and mobile use places, before this branch merges                              |
+| Route                      | Who calls it       | What it does                                                                                                               |
+| -------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/health`          | anyone             | `{status: "ok"}`                                                                                                           |
+| `GET /api/places`          | web, mobile        | The campus outline and every place (area, building, parking lot, road) with its geometry; fetched once                     |
+| `GET /api/live`            | web, mobile        | `{places, cells, at}`: each place's count, level, free slots, `stale` and age, and the outdoor heat merged by max per cell |
+| Socket.IO `live`           | web, mobile        | The same snapshot, on connect and every second                                                                             |
+| `POST /internal/readings`  | the vision service | `Bearer VISION_INGEST_TOKEN` + `{readings}`; 202 `{accepted, rejected}`, 401, 400, or 422 if none is accepted              |
+| `POST /api/assistant/chat` | web, mobile        | `{message}` → `{answer, via}`: the LLM grounded on the places, or the rule-based fallback; 10 per minute per client        |
 
 A place's state comes from its fresh cameras (a reading in the last `STALE_AFTER_MS`): an area or a road
 takes its busiest camera (views overlap), a building or a parking lot adds its cameras up (rooms and

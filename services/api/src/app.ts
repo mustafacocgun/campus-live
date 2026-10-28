@@ -6,7 +6,6 @@ import { errorHandler, notFound } from "./middleware/error-handler.js";
 import { assistantRouter } from "./modules/assistant/assistant.routes.js";
 import type { LlmClient } from "./modules/assistant/llm-client.js";
 import type { CameraRegistry } from "./modules/cameras/camera-registry.js";
-import { camerasRouter } from "./modules/cameras/cameras.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { ingestRouter } from "./modules/live/ingest.routes.js";
 import { liveRouter } from "./modules/live/live.routes.js";
@@ -31,7 +30,6 @@ export function createApp({ registry, places, store, env, llm }: AppDeps) {
   app.use("/api", express.json({ limit: "256kb" }));
 
   app.use("/api/health", healthRouter);
-  app.use("/api/cameras", camerasRouter(store));
   app.use("/api/places", placesRouter(places));
   app.use("/api/live", liveRouter(store));
   app.use("/api/assistant", assistantRouter({ store, places, llm }));

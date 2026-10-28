@@ -1,14 +1,14 @@
 // End-to-end smoke test: the real API and the real vision service on spare ports, counting synthetic
 // test clips with the test-boxes detector (no footage or GPU needed). Passes when every camera has a
-// fresh reading with density cells inside its own view cone, every place is live in the snapshot, and
-// the assistant quotes a place's live count. Needs `npm run build:packages` and the vision package in
-// services/vision/.venv (or $PYTHON).
+// reading, every place is live in the snapshot, the heat lies inside the outdoor cameras' view cones,
+// the assistant quotes a place's live count, and no public payload holds a camera id or position.
+// Needs `npm run build:packages` and the vision package in services/vision/.venv (or $PYTHON).
 //
 //   node scripts/e2e-smoke.mjs
 
 import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,8 +54,40 @@ async function until(check, timeoutMs, what) {
   throw new Error(`timed out waiting for ${what}`);
 }
 
-const cameras = async () => (await (await fetch(`${API}/api/cameras`)).json()).data;
+const VISION = "http://127.0.0.1:8101";
 const get = async (route) => (await (await fetch(`${API}${route}`)).json()).data;
+// The private camera registry. A test may read the file; no public route or event serves it.
+const registry = JSON.parse(readFileSync(path.join(root, "config", "cameras.json"), "utf8")).cameras;
+const spot = (lng, lat) => `${lng.toFixed(6)},${lat.toFixed(6)}`;
+
+/** Every camera id or camera position anywhere in a public payload (CLAUDE.md §0.2). */
+function leaks(payload) {
+  const ids = new Set(registry.map((camera) => camera.id));
+  const spots = new Set(registry.map((camera) => spot(camera.longitude, camera.latitude)));
+  const found = [];
+  const walk = (value, where) => {
+    if (typeof value === "string" && ids.has(value)) found.push(`${where}: camera id ${value}`);
+    if (Array.isArray(value)) {
+      const [a, b] = value;
+      if (value.length === 2 && typeof a === "number" && typeof b === "number" && spots.has(spot(a, b)))
+        found.push(`${where}: a camera position`);
+      value.forEach((item, i) => walk(item, `${where}[${i}]`));
+    } else if (value && typeof value === "object") {
+      if (
+        typeof value.lat === "number" &&
+        typeof value.lng === "number" &&
+        spots.has(spot(value.lng, value.lat))
+      )
+        found.push(`${where}: a camera position`);
+      for (const [key, item] of Object.entries(value)) {
+        if (ids.has(key)) found.push(`${where}.${key}: camera id`);
+        walk(item, `${where}.${key}`);
+      }
+    }
+  };
+  walk(payload, "$");
+  return found;
+}
 
 // Half the diagonal of a 3 m cell: a cell's centre may sit this far from the feet binned into it.
 const CELL_SLACK_M = 2.2;
@@ -102,50 +134,49 @@ try {
       VISION_PORT: "8101",
     }),
   );
-  // Every camera reports; outdoor crowd cameras also say where people are (indoor ones count only).
-  const outdoorCrowd = (camera) => camera.kind === "crowd" && !camera.indoor;
+  // Every camera makes readings, by the vision service's own status (private, like the registry).
   await until(
-    async () =>
-      (await cameras()).every(
-        (camera) => !camera.stale && (!outdoorCrowd(camera) || camera.reading.cells?.length),
-      ),
+    async () => {
+      const { cameras } = await (await fetch(`${VISION}/status`)).json();
+      return (
+        cameras.length === registry.length && cameras.every((camera) => camera.lastReadingAt && !camera.error)
+      );
+    },
     60_000,
-    "fresh readings from every camera, with density cells outdoors",
+    "a reading from every camera",
   );
-  const all = await cameras();
-  const live = all.filter(outdoorCrowd);
-  console.log(
-    `ok: ${all.length} cameras have fresh readings; ${live.length} outdoor ones send density cells`,
+  console.log(`ok: all ${registry.length} cameras make readings`);
+  // The apps' view: every place has a camera, so with every camera reporting every place is live.
+  await until(
+    async () => {
+      const live = await get("/api/live");
+      return live.places.every((place) => !place.stale) && live.cells.length > 0;
+    },
+    30_000,
+    "every place live in /api/live, with heat",
   );
-  const lots = all.filter((camera) => camera.kind === "parking");
-  if (!lots.every((camera) => camera.reading.parking?.total > 0))
-    throw new Error("a parking camera has no slots");
-  if (all.some((camera) => camera.indoor && camera.reading.cells))
-    throw new Error("an indoor camera sent cells");
-  console.log(`ok: ${lots.length} parking cameras report free/total; indoor cameras send counts only`);
-  // The heat must land where each camera looks: the service's pose wiring and map offsets are checked
-  // here. The projection's own geometry is not (the test clips are drawn through it, so a wrong
-  // homography cancels out): test_projection.py pins that with hand-derived values.
-  const strays = live.flatMap((camera) =>
-    camera.reading.cells
-      .map((cell) => outsideCone(camera, cell))
-      .filter(Boolean)
-      .map((why) => `${camera.id}: a cell ${why}`),
-  );
-  if (strays.length) throw new Error(`cells outside their camera's cone:\n${strays.slice(0, 10).join("\n")}`);
-  const total = live.reduce((sum, camera) => sum + camera.reading.cells.length, 0);
-  console.log(`ok: all ${total} cells lie inside their camera's view cone`);
-
-  // The apps' view: every place has a camera, so with every camera fresh every place is live.
-  const { places } = await get("/api/places");
+  const map = await get("/api/places");
+  const { places } = map;
   const snapshot = await get("/api/live");
-  const quiet = snapshot.places.filter((place) => place.stale).map((place) => place.id);
-  if (snapshot.places.length !== places.length || quiet.length) {
-    throw new Error(`places without a live state: ${quiet.join(", ") || "a place is missing"}`);
-  }
+  if (snapshot.places.length !== places.length) throw new Error("a place is missing from /api/live");
   console.log(
     `ok: all ${places.length} places are live in /api/live, with ${snapshot.cells.length} heat cells`,
   );
+  const kindOf = new Map(places.map((place) => [place.id, place.kind]));
+  const lots = snapshot.places.filter((place) => kindOf.get(place.id) === "parking");
+  if (!lots.length || !lots.every((place) => place.parking?.total > 0))
+    throw new Error("a parking lot has no slots");
+  console.log(`ok: ${lots.length} parking lots report free/total`);
+  // The heat must land where outdoor cameras look: the service's pose wiring and map offsets are checked
+  // here. The heat no longer says which camera a cell came from, so each cell must lie in the cone of
+  // some outdoor camera; indoor cameras send none. The projection's own geometry is not checked (the
+  // test clips are drawn through it, so a wrong homography cancels out): test_projection.py pins it.
+  const outdoor = registry.filter((camera) => camera.kind === "crowd" && !camera.indoor);
+  const strays = snapshot.cells.filter((cell) => outdoor.every((camera) => outsideCone(camera, cell)));
+  if (strays.length) {
+    throw new Error(`heat cells outside every outdoor camera's cone: ${JSON.stringify(strays.slice(0, 5))}`);
+  }
+  console.log(`ok: all ${snapshot.cells.length} heat cells lie inside an outdoor camera's view cone`);
 
   const area = places.find((place) => place.name === "Taş Kafe önü");
   const state = async () => (await get("/api/live")).places.find((place) => place.id === area.id);
@@ -163,6 +194,13 @@ try {
     throw new Error(`the assistant did not quote Taş Kafe önü's live count:\n${answer}`);
   }
   console.log(`ok: the assistant quoted Taş Kafe önü's live count (${phrase(before)})`);
+
+  // Nothing public names or locates a camera: the map, the live state, the assistant's answer.
+  const found = [map, snapshot, await get("/api/live"), { answer }].flatMap(leaks);
+  const named = registry.filter((camera) => answer.includes(camera.id)).map((camera) => camera.id);
+  if (found.length || named.length)
+    throw new Error(`camera data in a public payload: ${[...found, ...named].slice(0, 5)}`);
+  console.log("ok: no public payload holds a camera id or position");
   console.log("E2E SMOKE PASSED");
 } catch (error) {
   console.error(`E2E SMOKE FAILED: ${error.message}`);

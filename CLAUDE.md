@@ -162,7 +162,7 @@ decisions that are the team's · never claim an improvement you did not measure.
 | API                            | Express 5 + TypeScript + Socket.IO, `services/api`                             | in repo |
 | Vision                         | Python 3.12, FastAPI, supervision, YOLO11n (optional extra), `services/vision` | in repo |
 | Contracts                      | zod 4 schemas + generated JSON Schema, `packages/contracts`                    | in repo |
-| Live state                     | in memory in the API (latest reading + density cells per camera)               | in repo |
+| Live state                     | in memory in the API (latest reading per camera; places and heat from it)      | in repo |
 | Footage                        | WILDTRACK + licensed stock clips, each in `docs/data-sources.md`               | in repo |
 | History, accounts, push alerts | Postgres, push tokens                                                          | open    |
 | LLM provider                   | any OpenAI-compatible endpoint via `LLM_*` env                                 | open    |
@@ -179,8 +179,8 @@ cd services/vision && pytest     # vision tests (venv with `pip install -e ".[de
 **The request path** — every feature goes through it; nothing skips a layer:
 
 ```
-vision worker ─► POST /internal/readings (Bearer token) ─► api live store ─► Socket.IO "reading"
-web / mobile ─► @campus-live/client ─► GET /api/cameras, POST /api/assistant/chat ─► api
+vision worker ─► POST /internal/readings (Bearer token) ─► api live store ─► Socket.IO "live" (every second)
+web / mobile ─► @campus-live/client ─► GET /api/places, GET /api/live, POST /api/assistant/chat ─► api
 ```
 
 - **Clients talk only to the API** — never to the vision service or the LLM directly.

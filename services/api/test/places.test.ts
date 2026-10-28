@@ -266,15 +266,33 @@ describe("public routes and events", () => {
     expect(pushed.places).toHaveLength(5);
   });
 
-  it("no public payload names or locates a camera", async () => {
+  it("no public route or event names or locates a camera", async () => {
     const cameras = loadRegistry(env.CAMERAS_FILE).list();
+    // Every event a client hears, by name, over a periodic push.
+    const client = connect(server.url, { transports: ["websocket"] });
+    clients.push(client);
+    const heard: [string, unknown][] = [];
+    client.onAny((event: string, payload: unknown) => heard.push([event, payload]));
     expect((await ingest(server.url, { readings: everyCamera() })).status).toBe(202);
-    const snapshots = subscribe();
-    const pushed = await until(() => snapshots[0]);
-    expect(LiveSnapshot.parse(pushed).cells).toHaveLength(2);
-    for (const payload of [await get("/api/places"), await get("/api/live"), pushed]) {
+    const pushed = await until(() =>
+      heard.find(([, payload]) => LiveSnapshot.parse(payload).cells.length === 2),
+    );
+    const chat = (await (
+      await fetch(`${server.url}/api/assistant/chat`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: "Kampüste genel durum ne?" }),
+      })
+    ).json()) as ApiResponse<{ answer: string }>;
+    if (!chat.success) throw new Error(chat.error.message);
+    const payloads = [await get("/api/health"), await get("/api/places"), await get("/api/live"), chat.data];
+    for (const payload of [...payloads, ...heard.map(([, each]) => each)]) {
       expect(leaks(payload, cameras)).toEqual([]);
     }
+    expect(new Set(heard.map(([event]) => event))).toEqual(new Set([SOCKET_EVENTS.live]));
+    expect(pushed).toBeTruthy();
+    // The answer is free text: no camera id inside it either.
+    for (const camera of cameras) expect(chat.data.answer).not.toContain(camera.id);
   });
 });
 
