@@ -90,8 +90,10 @@ Cut long videos into 5-minute clips, at 5 frames a second and 720p, so one PC ca
 ffmpeg -i C1.mp4 -vf "fps=5,scale=1280:-2" -an -f segment -segment_time 300 -reset_timestamps 1 C1_%03d.mp4
 ```
 
-Name WILDTRACK clips `<view>_<index>` (`C1_000.mp4` … `C7_011.mp4`): the plaza's 7 cameras then play the
-same index from the same start, in sync. Then give every camera a clip, at random but reproducibly:
+Keep WILDTRACK clips at 1920×1080 (drop `scale=1280:-2`): the plaza cameras' calibration refuses any
+other frame size (#46). Name them `<view>_<index>` (`C1_000.mp4` … `C7_011.mp4`): the plaza's 7 cameras
+then play the same index from the same start, in sync. Then give every camera a clip, at random but
+reproducibly:
 
 ```bash
 python tools/assign_clips.py --clips videos/wildtrack --out configs/cameras.yaml
@@ -100,6 +102,21 @@ python tools/assign_clips.py --clips videos/traffic --kind traffic --config conf
 ```
 
 Each camera gets a random clip and start (`start_s`); `--seed` picks another draw.
+
+**Many cameras on one PC: run more than one vision process.** One process runs every camera as a
+thread, and past a few dozen cameras it falls behind while the GPU is still half idle. Split
+`configs/cameras.yaml` into parts (keep the plaza's 7 cameras together) and give each part its own
+process and port; they all push to the same API:
+
+```powershell
+# npm run dev runs the first part: VISION_CAMERAS_FILE=configs/cameras.part1.yaml in .env
+$env:VISION_CAMERAS_FILE="configs/cameras.part2.yaml"; $env:VISION_PORT="8002"; .venv\Scripts\python -m vision
+```
+
+Measured on one laptop (RTX 4050, 6 GB) with 52 crowd cameras on 2 fps WILDTRACK clips (#39): one
+process kept a median 1.33 readings a second per camera (clips play at 2), with or without 720p
+clips; two processes of 26 kept 1.83–1.87, using 4.7 GB of GPU memory. Name the part files
+`cameras.<anything>.yaml` and keep them out of git: they hold the clip paths.
 
 ## Where people land on the map
 
@@ -114,11 +131,10 @@ Each camera gets a random clip and start (`start_s`); `--seed` picks another dra
    `docs/data-sources.md`) and unzip it into `datasets/wildtrack/` (git-ignored), so that
    `datasets/wildtrack/calibrations/` and `datasets/wildtrack/Image_subsets/` exist.
 2. The shipped calibration belongs to the frames, not the raw videos. Turn each camera's frames into a
-   video, C1 to C7:
-   `python tools/frames_to_video.py datasets/wildtrack/Image_subsets/C1 videos/wildtrack/C1.mp4 --fps 10`.
-   If the frame numbers go up in steps of 5, the frames are 2 per second: use `--fps 2`.
-3. In `configs/cameras.yaml`, set `source: videos/wildtrack/C1.mp4` for `kutuphane-meydani-1`, and so
-   on to C7.
+   video, C1 to C7 (the frames are numbered in steps of 5: 2 per second, about 200 s):
+   `python tools/frames_to_video.py datasets/wildtrack/Image_subsets/C1 videos/wildtrack/C1_000.mp4 --fps 2`.
+3. In `configs/cameras.yaml`, set `source: videos/wildtrack/C1_000.mp4` for `kutuphane-meydani-1`, and so
+   on to C7, or let `tools/assign_clips.py` do it (below).
 4. Run it, open the map and move the `&plaza` anchor (`lat`, `lng`, `rotation_deg`) until the heat
    sits on the plaza.
 
