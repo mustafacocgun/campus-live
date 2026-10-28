@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, type PointerEvent, useState } from "react";
+import { type KeyboardEvent, type PointerEvent, useId, useState } from "react";
 import type { SessionPoint } from "@/lib/session-history";
 
 const W = 280;
@@ -20,6 +20,8 @@ function clock(at: number): string {
 /** One camera's readings since the page opened; a crosshair reads any point, by pointer or arrow keys. */
 export function SessionChart({ points, unit }: { points: SessionPoint[]; unit: string }) {
   const [active, setActive] = useState<number | null>(null);
+  // Two charts can be on the page at once (the map overlay and the detail column): ids must differ.
+  const gradient = `chart${useId().replace(/[^\w-]/g, "")}`;
   if (points.length < 2)
     return (
       <p className="rounded-xl border border-dashed border-line p-3 text-xs text-muted">
@@ -97,15 +99,26 @@ export function SessionChart({ points, unit }: { points: SessionPoint[]; unit: s
             {clock(last.at)}
           </text>
         </g>
-        <path d={area} className="fill-accent/10" />
+        <defs>
+          {/* The brand's violet-to-fuchsia, along the line and fading down through the area. */}
+          <linearGradient id={`${gradient}-line`} x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stopColor="var(--accent)" />
+            <stop offset="1" stopColor="var(--brand-2)" />
+          </linearGradient>
+          <linearGradient id={`${gradient}-area`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor="var(--brand-2)" stopOpacity={0.3} />
+            <stop offset="1" stopColor="var(--accent)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#${gradient}-area)`} />
         <path
           d={line}
           fill="none"
+          stroke={`url(#${gradient}-line)`}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
-          className="stroke-accent"
         />
         {shown && (
           <line
@@ -122,7 +135,7 @@ export function SessionChart({ points, unit }: { points: SessionPoint[]; unit: s
           cy={y((shown ?? last).value)}
           r={4}
           strokeWidth={2}
-          className="fill-accent stroke-surface"
+          className="fill-brand-2 stroke-surface"
         />
       </svg>
       {shown && (

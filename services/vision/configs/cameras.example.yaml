@@ -1,24 +1,381 @@
-# Demo cameras for Campus Live. Every id must exist in services/api/config/cameras.json with the same
-# kind (a test checks this). Thresholds and slot totals are placeholders until a hand count
-# calibrates them (CLAUDE.md §3.6).
-#
-# To count from video: copy this file to cameras.yaml (git-ignored: sources can be private URLs),
-# set `source` to a video file or a webcam index, and run with VISION_DETECTOR=yolo.
+# Processing config for every camera in config/cameras.json (written by tools/build_campus.py).
+# Copy it to cameras.yaml (git-ignored), give cameras footage with tools/assign_clips.py, and run
+# with VISION_CAMERAS_FILE=configs/cameras.yaml. A camera without a source does not run (grey).
+# Thresholds are placeholders until a hand count calibrates them (CLAUDE.md §3.6). Parking
+# cameras get their slots from their clip (tools/draw_slots.py).
 cameras:
-  - id: kutuphane-giris
+  - id: kutuphane-meydani-1
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 1, anchor: &plaza { lat: 40.741533, lng: 30.332652, rotation_deg: 90 } }
+
+  - id: kutuphane-meydani-2
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 2, anchor: *plaza }
+
+  - id: kutuphane-meydani-3
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 3, anchor: *plaza }
+
+  - id: kutuphane-meydani-4
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 4, anchor: *plaza }
+
+  - id: kutuphane-meydani-5
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 5, anchor: *plaza }
+
+  - id: kutuphane-meydani-6
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 6, anchor: *plaza }
+
+  - id: kutuphane-meydani-7
+    kind: crowd
+    thresholds: { medium: 10, high: 25 }
+    wildtrack: { camera: 7, anchor: *plaza }
+
+  - id: kutuphane-bati
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: kutuphane-yolu
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: merkez-kantin
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: tas-kafe
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: kantin
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: yemekhane
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: yemekhane-yolu
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: muhendislik
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: bilisim
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: fen-edebiyat
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: rektorluk
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: kongre-merkezi
+    kind: crowd
+    thresholds: { medium: 8, high: 20 }
+
+  - id: bilgisayar-arastirma-ve-uygulama-merkezi-ic-1
     kind: crowd
     thresholds: { medium: 15, high: 40 }
 
-  - id: kafe-merkez
+  - id: devlet-konservatuvari-ic-1
     kind: crowd
-    # Only people whose feet are inside this area count: x, y as fractions of the frame.
-    zone: [[0.1, 0.3], [0.9, 0.3], [0.9, 1.0], [0.1, 1.0]]
-    thresholds: { medium: 10, high: 25 }
+    thresholds: { medium: 15, high: 40 }
 
-  - id: otopark-a
+  - id: fen-edebiyat-fakultesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: fen-edebiyat-fakultesi-ic-2
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: kampus-kafeterya-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: kantin-binasi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: kultur-ve-kongre-merkezi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: kultur-ve-kongre-merkezi-ic-2
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: kutuphane-ek-bina-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: lumo-coffee-sakarya-kampus-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: m7-makine-muhendisligi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: sausem-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: bilisim-fakultesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: fen-bilimleri-enstitusu-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: hukuk-fakultesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: m2-binasi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: m4-binasi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: m6-binasi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: muhendislik-fakultesi-dekanligi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: personel-yemekhanesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: rektorluk-binasi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: suleyman-demirel-kutuphanesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: ogrenci-yemekhanesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: ilahiyat-fakultesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: ilahiyat-fakultesi-ic-2
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: sakli-bahce-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: sanat-tasarim-ve-mimarlik-fakultesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: t1-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: t3-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: t4-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: tas-kafe-binasi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: insan-ve-toplum-bilimleri-fakultesi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: insaat-muhendisligi-ic-1
+    kind: crowd
+    thresholds: { medium: 15, high: 40 }
+
+  - id: rektorluk-binasi-otoparki-1
     kind: parking
-    simulated_total: 40
 
-  - id: ana-yol
+  - id: kampus-kafeterya-otoparki-1
+    kind: parking
+
+  - id: m7-makine-muhendisligi-otoparki-1
+    kind: parking
+
+  - id: personel-yemekhanesi-otoparki-1
+    kind: parking
+
+  - id: bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-1
+    kind: parking
+
+  - id: muhendislik-fakultesi-dekanligi-otoparki-1
+    kind: parking
+
+  - id: otopark-1
+    kind: parking
+
+  - id: bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-2-1
+    kind: parking
+
+  - id: bilgisayar-arastirma-ve-uygulama-merkezi-otoparki-3-1
+    kind: parking
+
+  - id: sanat-tasarim-ve-mimarlik-fakultesi-otoparki-1
+    kind: parking
+
+  - id: t4-otoparki-1
+    kind: parking
+
+  - id: suleyman-demirel-kutuphanesi-otoparki-1
+    kind: parking
+
+  - id: fen-edebiyat-fakultesi-otoparki-1
+    kind: parking
+
+  - id: personel-yemekhanesi-otoparki-2-1
+    kind: parking
+
+  - id: lumo-coffee-sakarya-kampus-otoparki-1
+    kind: parking
+
+  - id: lumo-coffee-sakarya-kampus-otoparki-2-1
+    kind: parking
+
+  - id: kantin-otoparki-1
+    kind: parking
+
+  - id: otopark-2-1
+    kind: parking
+
+  - id: fen-bilimleri-enstitusu-otoparki-1
+    kind: parking
+
+  - id: rektorluk-binasi-otoparki-2-1
+    kind: parking
+
+  - id: insaat-muhendisligi-otoparki-1
+    kind: parking
+
+  - id: insaat-muhendisligi-otoparki-2-1
+    kind: parking
+
+  - id: lumo-coffee-sakarya-kampus-otoparki-3-1
+    kind: parking
+
+  - id: hukuk-fakultesi-otoparki-1
+    kind: parking
+
+  - id: fen-bilimleri-enstitusu-otoparki-2-1
+    kind: parking
+
+  - id: otopark-3-1
+    kind: parking
+
+  - id: otopark-4-1
+    kind: parking
+
+  - id: otopark-5-1
+    kind: parking
+
+  - id: hukuk-fakultesi-otoparki-2-1
+    kind: parking
+
+  - id: devlet-konservatuvari-otoparki-1
+    kind: parking
+
+  - id: devlet-konservatuvari-otoparki-2-1
+    kind: parking
+
+  - id: kampus-ici-yolu-1
     kind: traffic
-    thresholds: { medium: 8, high: 20 }
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-ici-yolu-2
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: 182-sokak-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: universite-caddesi-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-1-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-1-2
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-1-3
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-2-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-2-2
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-2-3
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-3-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-3-2
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-3-3
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-4-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-4-2
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-5-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }
+
+  - id: kampus-yolu-6-1
+    kind: traffic
+    thresholds: { medium: 3, high: 8 }

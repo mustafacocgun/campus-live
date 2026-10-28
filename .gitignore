@@ -14,6 +14,9 @@ next-env.d.ts
 .env.*
 !.env.example
 
+# Development mail (sign-up codes and alerts written instead of sent): addresses, never committed
+services/api/.mail-outbox/
+
 # Python
 __pycache__/
 *.pyc
@@ -24,7 +27,14 @@ __pycache__/
 
 # Vision data: videos and model weights are never committed (CLAUDE.md §0.3)
 services/vision/videos/
+services/vision/datasets/
+
+# MapLibre's worker, copied from node_modules before dev and build
+apps/web/public/maplibre-gl-worker.mjs
 services/vision/configs/cameras.yaml
+# Parts of it for more than one vision process (cameras.part1.yaml, ...)
+services/vision/configs/cameras.*.yaml
+!services/vision/configs/cameras.example.yaml
 services/vision/models/*
 !services/vision/models/.gitkeep
 *.pt

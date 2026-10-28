@@ -1,0 +1,66 @@
+{
+  "_note": "Test cameras for the API's tests only; the demo registry is config/cameras.json at the repo root.",
+  "cameras": [
+    {
+      "id": "kutuphane-giris",
+      "name": "Kütüphane girişi",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.7412,
+      "longitude": 30.3306,
+      "heading": 0,
+      "fovDeg": 70,
+      "rangeM": 30,
+      "place": "kutuphane-alani"
+    },
+    {
+      "id": "kafe-merkez",
+      "name": "Merkez kafe",
+      "section": "Kafeler",
+      "kind": "crowd",
+      "latitude": 40.7419,
+      "longitude": 30.3318,
+      "heading": 90,
+      "fovDeg": 70,
+      "rangeM": 30,
+      "place": "kafe-alani"
+    },
+    {
+      "id": "otopark-a",
+      "name": "Otopark A",
+      "section": "Otoparklar",
+      "kind": "parking",
+      "latitude": 40.7431,
+      "longitude": 30.3297,
+      "heading": 180,
+      "fovDeg": 90,
+      "rangeM": 60,
+      "place": "a-otoparki"
+    },
+    {
+      "id": "ana-yol",
+      "name": "Kampüs ana yolu",
+      "section": "Yollar",
+      "kind": "traffic",
+      "latitude": 40.7405,
+      "longitude": 30.333,
+      "heading": 270,
+      "fovDeg": 60,
+      "rangeM": 80,
+      "place": "kampus-ana-caddesi"
+    },
+    {
+      "id": "kutuphane-ic",
+      "name": "Kütüphane iç",
+      "section": "Kütüphane",
+      "kind": "crowd",
+      "latitude": 40.7416,
+      "longitude": 30.3318,
+      "heading": 90,
+      "fovDeg": 90,
+      "rangeM": 15,
+      "place": "kutuphane-binasi",
+      "indoor": true
+    }
+  ]
+}

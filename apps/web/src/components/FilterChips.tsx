@@ -1,48 +1,76 @@
-import type { LiveCamera } from "@campus-live/contracts";
-import type { ReactNode } from "react";
-import { CameraIcon, GridIcon } from "./icons";
+import { PLACE_TOPIC, type PlaceView } from "@campus-live/client";
+import type { CameraKind } from "@campus-live/contracts";
+import { KIND_LABEL_TR } from "./icons";
 
-/** "Tümü" plus one chip per section the registry actually has; nothing invented (CLAUDE.md §0.5). */
+const TOPICS: CameraKind[] = ["crowd", "parking", "traffic"];
+
+/**
+ * "Tümü" plus one pill per kind of place the map has (Kalabalık, Otopark, Trafik), and under them one
+ * tab per section of the chosen kind. Only what the places actually have; nothing invented
+ * (CLAUDE.md §0.5).
+ */
 export function FilterChips({
-  cameras,
-  value,
-  onChange,
+  places,
+  topic,
+  section,
+  onTopic,
+  onSection,
 }: {
-  cameras: LiveCamera[];
-  value: string | null;
-  onChange: (section: string | null) => void;
+  places: PlaceView[];
+  topic: CameraKind | null;
+  section: string | null;
+  onTopic: (topic: CameraKind | null) => void;
+  onSection: (section: string | null) => void;
 }) {
-  const sections = [...new Map(cameras.map((camera) => [camera.section, camera])).values()];
-  if (!sections.length) return null;
-  const chip = (key: string, label: string, icon: ReactNode, section: string | null) => {
-    const active = value === section;
-    return (
-      <button
-        key={key}
-        type="button"
-        aria-pressed={active}
-        onClick={() => onChange(section)}
-        className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-          active
-            ? "border-accent bg-accent text-accent-foreground shadow-lg shadow-accent/25"
-            : "border-line bg-surface hover:border-accent/60"
-        }`}
-      >
-        {icon}
-        {label}
-      </button>
-    );
-  };
+  const topics = TOPICS.filter((each) => places.some((place) => PLACE_TOPIC[place.kind] === each));
+  if (!topics.length) return null;
+  // Sections once a kind is chosen: under "Tümü" the row would be long and push the list down.
+  const sections = topic
+    ? [...new Set(places.filter((place) => PLACE_TOPIC[place.kind] === topic).map((place) => place.section))]
+    : [];
+  const pill = (key: string, label: string, active: boolean, onClick: () => void) => (
+    <button
+      key={key}
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+        active
+          ? "bg-accent text-accent-foreground shadow-card"
+          : "bg-surface text-foreground ring-1 ring-line hover:ring-line-strong"
+      }`}
+    >
+      {label}
+    </button>
+  );
   return (
-    <nav aria-label="Bölüme göre süz" className="flex flex-wrap gap-2">
-      {chip("all", "Tümü", <GridIcon />, null)}
-      {sections.map((camera) =>
-        chip(
-          camera.section,
-          camera.section,
-          <CameraIcon camera={camera} className="h-4 w-4" />,
-          camera.section,
-        ),
+    <nav aria-label="Yerleri süz" className="space-y-2.5">
+      <div className="flex flex-wrap gap-1.5">
+        {pill("all", "Tümü", topic === null, () => onTopic(null))}
+        {topics.map((each) => pill(each, KIND_LABEL_TR[each], topic === each, () => onTopic(each)))}
+      </div>
+      {sections.length > 1 && (
+        // Scrolls sideways on a narrow sidebar instead of wrapping into a block of tabs.
+        <div className="-mx-1 flex gap-1 overflow-x-auto border-b border-line px-1 [scrollbar-width:none]">
+          {sections.map((each) => {
+            const active = section === each;
+            return (
+              <button
+                key={each}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSection(active ? null : each)}
+                className={`-mb-px shrink-0 border-b-2 px-2 pt-1 pb-2 text-xs font-semibold whitespace-nowrap transition ${
+                  active
+                    ? "border-accent text-accent-text"
+                    : "border-transparent text-muted hover:text-foreground"
+                }`}
+              >
+                {each}
+              </button>
+            );
+          })}
+        </div>
       )}
     </nav>
   );

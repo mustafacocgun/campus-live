@@ -11,10 +11,10 @@ class Settings(BaseSettings):
     api_url: str = "http://localhost:4000"
     # Must equal the API's VISION_INGEST_TOKEN; a secret, so it lives in .env only.
     ingest_token: str = ""
-    # The example file works out of the box in simulated mode; real sources go in configs/cameras.yaml.
+    # The example lists every camera without footage, so nothing runs; configs/cameras.yaml (your copy,
+    # git-ignored) sets each camera's video.
     cameras_file: str = "configs/cameras.example.yaml"
-    detector: Literal["simulated", "yolo", "replay"] = "simulated"
-    # Written by `python -m vision.record`, played by VISION_DETECTOR=replay.
-    replay_file: str = "recordings/demo.jsonl"
-    publish_interval_s: float = 2.0
+    # Live YOLO is the only data source in the app; test-boxes is for automated tests (CLAUDE.md §3.4).
+    detector: Literal["yolo", "test-boxes"] = "yolo"
+    publish_interval_s: float = 0.5
     port: int = 8001

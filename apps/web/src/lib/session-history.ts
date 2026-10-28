@@ -1,38 +1,43 @@
-import type { CameraKind, CameraReading, LiveCamera } from "@campus-live/contracts";
+import type { PlaceView } from "@campus-live/client";
+import type { PlaceKind } from "@campus-live/contracts";
 
-/** One plotted reading: when this browser received it, and the number the chart shows. */
+/** One plotted value: when this browser received it, and the number the chart shows. */
 export interface SessionPoint {
   at: number;
   value: number;
-  /** The vision service's timestamp: compared for equality only, never with this device's clock. */
-  measuredAt: string;
 }
 
-/** Per camera id, the readings received since the page opened. In memory only; nothing is stored. */
+/** Per place id, the values received since the page opened. In memory only; nothing is stored. */
 export type SessionHistory = Record<string, SessionPoint[]>;
 
 const WINDOW_MS = 10 * 60_000;
+// Snapshots come every second; an unchanged value is plotted again only this often.
+const REPEAT_MS = 5_000;
 
-/** The number a camera's chart plots: free slots for parking, people or vehicles otherwise. */
-export function chartValue(reading: CameraReading): number {
-  return reading.parking ? reading.parking.free : reading.count;
+/** The number a place's chart plots: free slots for a lot, people or vehicles otherwise. */
+export function chartValue(place: PlaceView): number | null {
+  if (place.stale) return null;
+  return place.kind === "parking" ? (place.parking?.free ?? null) : place.count;
 }
 
-export const CHART_UNIT: Record<CameraKind, string> = { crowd: "kişi", parking: "boş yer", traffic: "araç" };
+export const CHART_UNIT: Record<PlaceKind, string> = {
+  area: "kişi",
+  building: "kişi",
+  parking: "boş yer",
+  road: "araç",
+};
 
-/** Adds each camera's newest fresh reading once and drops points older than the window. */
-export function appendReadings(history: SessionHistory, cameras: LiveCamera[], now: number): SessionHistory {
+/** Adds each fresh place's value when it changes (or every few seconds) and drops old points. */
+export function appendPlaces(history: SessionHistory, places: PlaceView[], now: number): SessionHistory {
   let next = history;
-  for (const camera of cameras) {
-    const reading = camera.stale ? null : camera.reading;
-    const points = history[camera.id] ?? [];
-    if (!reading || points.at(-1)?.measuredAt === reading.measuredAt) continue;
+  for (const place of places) {
+    const value = chartValue(place);
+    const points = history[place.id] ?? [];
+    const last = points.at(-1);
+    if (value === null || (last && last.value === value && now - last.at < REPEAT_MS)) continue;
     next = {
       ...next,
-      [camera.id]: [
-        ...points.filter((point) => now - point.at <= WINDOW_MS),
-        { at: now, value: chartValue(reading), measuredAt: reading.measuredAt },
-      ],
+      [place.id]: [...points.filter((point) => now - point.at <= WINDOW_MS), { at: now, value }],
     };
   }
   return next;

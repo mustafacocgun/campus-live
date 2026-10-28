@@ -1,151 +1,70 @@
 /**
- * What the web and mobile apps share: talking to the API, merging live readings, and showing them.
- * Works in browsers and React Native (fetch + socket.io-client), so both apps use the same logic.
+ * What the web and mobile apps share: talking to the API, the live campus by places, the heat's glide
+ * and the map layers. Works in browsers and React Native (fetch + socket.io-client), so both apps use
+ * the same logic. Nothing here knows a camera (CLAUDE.md §0.2).
  */
-import {
-  DEFAULT_STALE_AFTER_MS,
-  type ApiResponse,
-  type AssistantResponse,
-  type CameraReading,
-  type Level,
-  type LiveCamera,
-  SOCKET_EVENTS,
-} from "@campus-live/contracts";
-import { io } from "socket.io-client";
+import type { AssistantResponse, DensityCell, LatLng } from "@campus-live/contracts";
+import { request } from "./request.js";
 
-/** A camera silent for longer is shown grey; matches the API's default STALE_AFTER_MS. */
-export const STALE_AFTER_MS = DEFAULT_STALE_AFTER_MS;
+export * from "./accounts.js";
+export * from "./common.js";
+export * from "./dark-style.js";
+export * from "./places.js";
 
-export const LEVEL_LABEL_TR: Record<Level, string> = { low: "Az", medium: "Orta", high: "Yoğun" };
-export const LEVEL_COLOR: Record<Level | "stale", string> = {
-  low: "#16a34a",
-  medium: "#f59e0b",
-  high: "#dc2626",
-  stale: "#9ca3af",
-};
-
-/**
- * One API call, unwrapped. Every failure is a Turkish message the apps can show as it is: never a
- * raw "Failed to fetch" or a JSON parse error from a proxy's HTML page.
- */
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(url, init);
-  } catch {
-    throw new Error("API'ye ulaşılamadı.");
-  }
-  const unexpected = new Error(`API beklenmeyen bir yanıt verdi (HTTP ${response.status}).`);
-  if (!response.headers.get("content-type")?.includes("application/json")) throw unexpected;
-  let body: ApiResponse<T>;
-  try {
-    body = (await response.json()) as ApiResponse<T>;
-  } catch {
-    throw unexpected;
-  }
-  if (!body.success) throw new Error(body.error.message);
-  return body.data;
-}
-
-export async function fetchCameras(apiUrl: string): Promise<LiveCamera[]> {
-  return request<LiveCamera[]>(`${apiUrl}/api/cameras`);
-}
-
-export async function askAssistant(apiUrl: string, message: string): Promise<AssistantResponse> {
+/** Asks the assistant; `location`, when given, lets it answer "the nearest…" from the user's position. */
+export async function askAssistant(
+  apiUrl: string,
+  message: string,
+  location?: LatLng,
+): Promise<AssistantResponse> {
   return request<AssistantResponse>(`${apiUrl}/api/assistant/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(location ? { message, location } : { message }),
   });
 }
 
-export interface LiveState {
-  cameras: LiveCamera[];
-  connected: boolean;
-  error: string | null;
-}
+/** One key per grid cell: the vision service sends identical centres for the same cell. */
+const cellKey = (cell: DensityCell) => `${cell.lat.toFixed(6)},${cell.lng.toFixed(6)}`;
+
+// Below this weight a cell draws nothing. Glides restart with every reading, often before they end,
+// so faded cells are dropped here rather than only at the end of a glide.
+const INVISIBLE_WEIGHT = 0.01;
 
 /**
- * The live camera list for an app: the first load over REST, then readings over Socket.IO, and a
- * tick that turns silent cameras grey. Calls `onChange` with each new state; returns a stop function.
+ * The heat `t` of the way (0 to 1) from one update to the next, so the cloud glides instead of
+ * jumping: cells that appear fade in from 0, cells that vanish fade out and are dropped.
  */
-export function startLiveFeed(
-  apiUrl: string,
-  onChange: (state: LiveState) => void,
-  tickMs = 5_000,
-): () => void {
-  let state: LiveState = { cameras: [], connected: false, error: null };
-  let stopped = false;
-  // When each camera's latest reading reached this device, by this device's clock: never compared
-  // with the vision machine's clock, which may be minutes off.
-  const receivedAt = new Map<string, number>();
-  const update = (patch: Partial<LiveState>) => {
-    if (stopped) return;
-    state = { ...state, ...patch };
-    onChange(state);
+export function lerpCells(from: DensityCell[], to: DensityCell[], t: number): DensityCell[] {
+  const pairs = new Map<string, { cell: DensityCell; from: number; to: number }>();
+  for (const cell of from) pairs.set(cellKey(cell), { cell, from: cell.weight, to: 0 });
+  for (const cell of to) {
+    const key = cellKey(cell);
+    pairs.set(key, { cell, from: pairs.get(key)?.from ?? 0, to: cell.weight });
+  }
+  const cells: DensityCell[] = [];
+  for (const { cell, from: a, to: b } of pairs.values()) {
+    const weight = a + (b - a) * t;
+    if (weight >= INVISIBLE_WEIGHT) cells.push({ lat: cell.lat, lng: cell.lng, weight });
+  }
+  return cells;
+}
+
+// GeoJSON for the heat layer, shaped for MapLibre on the web and on phones alike.
+type Feature<G, P> = { type: "Feature"; geometry: G; properties: P };
+type Collection<G, P> = { type: "FeatureCollection"; features: Feature<G, P>[] };
+type Point = { type: "Point"; coordinates: [number, number] };
+
+/** The heat layer's points: one per cell, weighted by its people. */
+export function heatGeoJSON(cells: DensityCell[]): Collection<Point, { weight: number }> {
+  return {
+    type: "FeatureCollection",
+    features: cells.map((cell) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [cell.lng, cell.lat] },
+      properties: { weight: cell.weight },
+    })),
   };
-  const load = () =>
-    fetchCameras(apiUrl)
-      .then((cameras) => {
-        const now = Date.now();
-        for (const camera of cameras)
-          if (camera.ageMs !== null) receivedAt.set(camera.id, now - camera.ageMs);
-        update({ cameras, error: null });
-      })
-      .catch(() => update({ error: "API'ye ulaşılamadı." }));
-
-  void load();
-  const socket = io(apiUrl, { transports: ["websocket"] });
-  socket.on("connect", () => {
-    update({ connected: true });
-    // Every (re)connect re-syncs the list: if the first load failed because the API was not up yet,
-    // readings for unknown cameras would otherwise be dropped and the map would stay empty.
-    void load();
-  });
-  socket.on("disconnect", () => update({ connected: false }));
-  socket.on(SOCKET_EVENTS.reading, (reading: CameraReading) => {
-    receivedAt.set(reading.cameraId, Date.now());
-    update({ cameras: mergeReading(state.cameras, reading) });
-  });
-  const timer = setInterval(() => {
-    const now = Date.now();
-    update({
-      cameras: state.cameras.map((camera) => ({
-        ...camera,
-        stale: isStaleSince(receivedAt.get(camera.id) ?? null, now),
-      })),
-    });
-  }, tickMs);
-
-  return () => {
-    stopped = true;
-    clearInterval(timer);
-    socket.close();
-  };
-}
-
-/** The cameras with `reading` applied to its camera, which becomes fresh; the others are untouched. */
-export function mergeReading(cameras: LiveCamera[], reading: CameraReading): LiveCamera[] {
-  return cameras.map((camera) =>
-    camera.id === reading.cameraId ? { ...camera, reading, stale: false, ageMs: 0 } : camera,
-  );
-}
-
-/** Stale when the last reading arrived more than `staleAfterMs` ago, both times by this device's clock. */
-export function isStaleSince(receivedAt: number | null, now: number, staleAfterMs = STALE_AFTER_MS): boolean {
-  return receivedAt === null || now - receivedAt > staleAfterMs;
-}
-
-/** Anything not from a real, permitted camera is labelled "Demo verisi" (CLAUDE.md §0.5). */
-export function isDemo(reading: CameraReading): boolean {
-  return reading.source !== "camera";
-}
-
-/** The number to show: free slots for parking, people or vehicles otherwise. */
-export function valueText(reading: CameraReading): string {
-  if (reading.kind === "parking" && reading.parking)
-    return `${reading.parking.free}/${reading.parking.total} boş`;
-  return `${reading.count} ${reading.kind === "crowd" ? "kişi" : "araç"}`;
 }
 
 /** A phone cannot reach the development machine as localhost; it needs the machine's LAN address. */
