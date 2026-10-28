@@ -3,7 +3,7 @@
  * and the map layers. Works in browsers and React Native (fetch + socket.io-client), so both apps use
  * the same logic. Nothing here knows a camera (CLAUDE.md §0.2).
  */
-import type { AssistantResponse, DensityCell } from "@campus-live/contracts";
+import type { AssistantResponse, DensityCell, LatLng } from "@campus-live/contracts";
 import { request } from "./request.js";
 
 export * from "./accounts.js";
@@ -11,11 +11,16 @@ export * from "./common.js";
 export * from "./dark-style.js";
 export * from "./places.js";
 
-export async function askAssistant(apiUrl: string, message: string): Promise<AssistantResponse> {
+/** Asks the assistant; `location`, when given, lets it answer "the nearest…" from the user's position. */
+export async function askAssistant(
+  apiUrl: string,
+  message: string,
+  location?: LatLng,
+): Promise<AssistantResponse> {
   return request<AssistantResponse>(`${apiUrl}/api/assistant/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(location ? { message, location } : { message }),
   });
 }
 

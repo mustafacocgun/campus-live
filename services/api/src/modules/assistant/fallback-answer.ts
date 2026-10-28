@@ -4,7 +4,7 @@ import { age, LEVEL_TR } from "./live-context.js";
 type Topic = "crowd" | "parking" | "traffic";
 
 /** Lowercase without Turkish letters, so "otoparkta bos yer" matches "Otoparkta boş yer". */
-function fold(text: string): string {
+export function fold(text: string): string {
   return text
     .toLocaleLowerCase("tr")
     .replace(/ç/g, "c")
