@@ -64,6 +64,20 @@ export class LiveStore {
   }
 
   /**
+   * The place's camera with the newest fresh reading, for the stage preview (D33). A camera id: the
+   * API uses it to ask vision for frames and never serves it (CLAUDE.md §0.2).
+   */
+  liveCameraOf(placeId: string, now: Date): string | undefined {
+    let best: { id: string; receivedAt: number } | undefined;
+    for (const camera of this.registry.list()) {
+      const entry = this.latest.get(camera.id);
+      if (camera.place !== placeId || !entry || now.getTime() - entry.receivedAt > this.staleAfterMs) continue;
+      if (!best || entry.receivedAt > best.receivedAt) best = { id: camera.id, receivedAt: entry.receivedAt };
+    }
+    return best?.id;
+  }
+
+  /**
    * Every place's state and the merged heat: what the apps see. Areas take their busiest camera (views
    * may overlap), buildings and parking lots add theirs up (rooms and slots differ), roads take the
    * busiest. Nothing in it names or locates a camera (CLAUDE.md §0.2).

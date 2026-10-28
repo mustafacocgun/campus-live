@@ -97,6 +97,7 @@ The zod schemas are the single source of truth. A build step writes them as JSON
 ## Privacy and data rules
 
 - **Frames never leave the vision service and are never written to disk.** Only readings leave it: counts, free slots and **aggregated** density cells. No identities, tracks or per-person positions ever leave vision.
+- **The stage preview is the one exception (D33).** With `VISION_PREVIEW=true` (vision) and `VISION_PREVIEW_URL` (API) on the demo machine, `GET /api/preview/:placeId` streams the place's live camera as MJPEG: the newest frame, scaled to 640 px, with YOLO's boxes, encoded only while someone watches and held in memory only. The API picks the camera with the newest fresh reading and never names it. The web plays it in an `<img>`; the phone in a small WebView whose page has the API as its base URL. Off by default; demo footage only.
 - **Camera positions never leave the server:** not in the public API, socket events, the apps or their bundles.
 - **Footage:** WILDTRACK (research and evaluation license) and licensed stock clips, each with a line in `docs/data-sources.md`. Videos, dataset files and model weights are never committed.
 - **Accounts keep only what alerts need** (D27): the school e-mail, a scrypt hash of the password, session-token hashes, alert rules and the notifications sent. No names or student numbers. E-mails never go into a log or the LLM prompt, and the assistant never sees accounts.

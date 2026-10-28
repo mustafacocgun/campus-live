@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DemoBadge, LevelChip, StaleChip } from "@/components/badges";
 import { Icon, KindIcon } from "@/components/icons";
+import { PlacePreview } from "@/components/place-preview";
 import { SessionChart } from "@/components/session-chart";
 import { cardShadow } from "@/constants/theme";
 import { ageText, KIND_TR, nearestParking } from "@/lib/place-format";
@@ -149,6 +150,8 @@ export function PlaceDetail({
             Uygulama açıldığından beri gelen değerler. Telefonda tutulur, kaydedilmez.
           </Text>
         </View>
+
+        {!place.stale && <PlacePreview placeId={place.id} />}
       </View>
 
       <Pressable

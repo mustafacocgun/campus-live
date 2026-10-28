@@ -1,6 +1,7 @@
 """The vision service: one worker per camera with footage, plus the publisher. /health and /status
-are for debugging."""
+are for debugging; /preview/<id> is the stage preview (D33), off by default."""
 
+import asyncio
 import logging
 import threading
 from collections.abc import AsyncIterator
@@ -8,7 +9,8 @@ from contextlib import asynccontextmanager
 from functools import partial
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 
 from vision.analyzers.crowd import CrowdAnalyzer, FeetProjector
 from vision.analyzers.parking import ParkingAnalyzer
@@ -18,6 +20,7 @@ from vision.cameras import CameraConfig, load_cameras
 from vision.config import Settings
 from vision.contracts import Camera
 from vision.detector import PARKED, PERSON, VEHICLES, TestBoxesDetector, YoloDetector
+from vision.preview import Preview
 from vision.projection import CameraPose, PoseProjector
 from vision.publisher import Publisher
 from vision.registry import load_registry
@@ -83,7 +86,10 @@ def build_workers(
             continue
         detector = partial(detector_class, CLASSES[camera.kind], imgsz=IMAGE_SIZE.get(camera.kind))
         analyzer = partial(make_analyzer, camera, registry[camera.id])
-        workers.append(CameraWorker(camera, detector, analyzer, source_kind=source_kind))
+        preview = Preview() if settings.preview else None
+        workers.append(CameraWorker(camera, detector, analyzer, source_kind=source_kind, preview=preview))
+    if settings.preview:
+        logger.warning("stage preview on (D33): annotated frames are served at /preview/<camera id>")
     return workers
 
 
@@ -120,3 +126,36 @@ def status() -> dict[str, Any]:
         "detector": app.state.settings.detector,
         "cameras": [worker.status() for worker in app.state.workers],
     }
+
+
+async def mjpeg(preview: Preview, poll_s: float = 0.05) -> AsyncIterator[bytes]:
+    """Each new frame once, as a part of a multipart/x-mixed-replace stream (what an <img> plays)."""
+    sent = 0
+    while True:
+        preview.watch()
+        frame = preview.newer_than(sent)
+        if frame:
+            sent, jpeg = frame
+            yield (
+                b"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: "
+                + str(len(jpeg)).encode()
+                + b"\r\n\r\n"
+                + jpeg
+                + b"\r\n"
+            )
+        await asyncio.sleep(poll_s)
+
+
+@app.get("/preview/{camera_id}")
+def preview(camera_id: str) -> StreamingResponse:
+    """The stage preview of one camera (D33): 404 unless VISION_PREVIEW is on and the camera runs on
+    video. Only the API calls it; the service listens on localhost only."""
+    worker = next((w for w in app.state.workers if w.camera.id == camera_id), None)
+    slot = getattr(worker, "preview", None)
+    if slot is None:
+        raise HTTPException(status_code=404, detail="no preview")
+    return StreamingResponse(
+        mjpeg(slot),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={"Cache-Control": "no-store"},
+    )

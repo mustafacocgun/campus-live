@@ -20,7 +20,11 @@ Override everything. If asked to break one, say so and ask again.
    `EXPO_PUBLIC_*` variable** — those ship to every browser and phone.
 2. **Camera frames never leave the vision service and are never stored.** Only `CameraReading`s
    (numbers) leave it, and the apps show numbers and colors. No face recognition, no
-   re-identification, no saved snapshots — not even for debugging. (KVKK) **Camera positions
+   re-identification, no saved snapshots — not even for debugging. (KVKK) **One exception, the
+   stage preview (D33):** with `VISION_PREVIEW=true` in vision and `VISION_PREVIEW_URL` in the API,
+   on the demo machine only, a place's newest frame with YOLO's boxes streams through the API to the
+   place detail on web and phone. Off by default, held in memory only, demo footage only, never a
+   real campus camera. **Camera positions
    never leave the server either:** the public API, socket events and the apps carry places and the
    merged heat only, never a camera id, position, direction or per-camera cells.
 3. **Footage is licensed or our own.** Licensed footage gets a line in `docs/data-sources.md`

@@ -21,4 +21,7 @@ class Settings(BaseSettings):
     # footage it is made from.
     replay_file: str = "recordings/demo.jsonl"
     publish_interval_s: float = 0.5
+    # The stage preview (D33): each camera's newest frame with its boxes, served at /preview/<id> for
+    # the API to pass to the place detail on web and phone. Off unless the demo machine turns it on.
+    preview: bool = False
     port: int = 8001

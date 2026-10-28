@@ -17,6 +17,7 @@ import { liveRouter } from "./modules/live/live.routes.js";
 import type { LiveStore } from "./modules/live/live-store.js";
 import type { PlaceRegistry } from "./modules/places/place-registry.js";
 import { placesRouter } from "./modules/places/places.routes.js";
+import { previewRouter } from "./modules/preview/preview.routes.js";
 import type { CapacityTable } from "./modules/regions/capacity.js";
 import { monitoredPlaces } from "./modules/regions/regions.js";
 import { regionsRouter } from "./modules/regions/regions.routes.js";
@@ -47,6 +48,7 @@ export function createApp({ registry, places, store, env, llm, capacity, account
   app.use("/api/health", healthRouter);
   app.use("/api/places", placesRouter(places));
   app.use("/api/live", liveRouter(store));
+  app.use("/api/preview", previewRouter({ store, visionUrl: env.VISION_PREVIEW_URL }));
   app.use("/api/regions", regionsRouter({ places, registry, store, capacity }));
   app.use("/api/assistant", assistantRouter({ store, places, llm }));
   if (accounts) {
