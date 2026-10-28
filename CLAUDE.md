@@ -110,8 +110,10 @@ decisions that are the team's · never claim an improvement you did not measure.
 3. **Counts are estimates.** They are smoothed (median of the last 5 samples), labelled demo, and
    marked stale after 15 s without a reading (grey on the map).
 4. **Live YOLO is the only data source in the app** (each teammate runs vision on a GPU PC with the
-   `yolo` extra). Nothing random or simulated is ever shown. The `test-boxes` detector (white
-   rectangles are people and yellow ones cars, in synthetic clips) exists for automated tests only.
+   `yolo` extra), **or a replay of the readings it recorded once from the same footage**
+   (`VISION_DETECTOR=replay`, D32), for a PC without a GPU or as the stage fallback. Nothing random or
+   simulated is ever shown. The `test-boxes` detector (white rectangles are people and yellow ones
+   cars, in synthetic clips) exists for automated tests only.
 5. **Accuracy needs a measurement:** hand-count a clip, run the counter on it, report both numbers and
    the clip's conditions. One clip is not a rate.
 6. **Levels come from per-camera thresholds**, which are guesses until a hand count calibrates them.
