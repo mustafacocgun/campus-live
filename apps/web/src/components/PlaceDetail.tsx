@@ -6,6 +6,7 @@ import { ageText, KIND_TR, nearestParking } from "@/lib/place-format";
 import { CHART_UNIT, type SessionPoint } from "@/lib/session-history";
 import { DemoBadge, LevelChip, StaleChip } from "./badges";
 import { ArrowLeftIcon, KindIcon } from "./icons";
+import { PlacePreview } from "./PlacePreview";
 import { SessionChart } from "./SessionChart";
 
 const LEVELS: Level[] = ["low", "medium", "high"];
@@ -20,7 +21,8 @@ function trend(points: SessionPoint[]): { from: number; to: number; change: numb
 
 /**
  * The selected place: its number, its level and this session's values, and for a crowd the nearest
- * lot with free slots. Numbers only, never images (§0.2); the level bar has no numeric ranges, since
+ * lot with free slots. Numbers only, except the stage preview when the demo machine turns it on (§0.2,
+ * D33); the level bar has no numeric ranges, since
  * the thresholds are per camera and not the team's final numbers yet (§0.5).
  */
 export function PlaceDetail({
@@ -142,6 +144,8 @@ export function PlaceDetail({
             Sayfa açıldığından beri gelen değerler. Tarayıcıda tutulur, kaydedilmez.
           </p>
         </div>
+
+        {!place.stale && <PlacePreview placeId={place.id} />}
       </section>
 
       {lot && (
